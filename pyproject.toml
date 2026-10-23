@@ -1,0 +1,38 @@
+[project]
+name = "tmb-cli"
+version = "0.1.0"
+description = "Unofficial, agent-friendly CLI for Barcelona's TMB bus and metro arrival times"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Alejandro Gómez", email = "282259161+alegoml@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+keywords = ["tmb", "barcelona", "bus", "metro", "cli", "agents"]
+dependencies = [
+    "httpx>=0.28.1",
+    "typer>=0.27.3",
+]
+
+[project.scripts]
+tmb = "tmb_cli.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
