@@ -49,6 +49,23 @@ uv run ruff check . && uv run ruff format .
 - Trip planner: `planner/plan`.
 - Rate limits / terms: unknown until Alex logs into the portal. Record them here.
 
+## Language
+Use these words in code, output and docs; avoid the alternatives. [wallapop's CONTEXT.md habit]
+
+- **Stop** (parada): a bus stop, identified by its stop code (e.g. `108`). _Avoid_: station.
+- **Station** (estació): a metro station, identified by its station code. _Avoid_: stop.
+- **Line** (línia): a bus or metro line as TMB names it (`V15`, `H12`, `L3`). _Avoid_: route.
+- **Arrival**: one predicted vehicle at a stop or station. `minutes` = minutes from now, `eta` =
+  clock time. _Avoid_: departure, prediction (except when talking about iBus accuracy).
+- **Destination**: where the arriving vehicle's trip ends, as TMB names it. _Avoid_: direction,
+  headsign.
+- **Static network**: lines, stops and stations from the `transit/…` endpoints, cached locally.
+  **Real time** is the `itransit/…` endpoints, never cached.
+- **Favourite**: a local name for a stop or station plus the user's **walk time** (minutes to get
+  there). Lives only on the user's machine. _Avoid_: bookmark, saved stop.
+- **make_it**: whether the user can catch an arrival from a favourite (`minutes` ≥ walk time);
+  the exact rule is defined in `docs/spec.md`.
+
 ## Positioning
 The TMB API is public and simple, so an agent could `curl` it directly. The CLI earns its place by
 doing what an agent can't do well alone: keep the keys out of the agent's context, resolve stop
@@ -58,21 +75,39 @@ never sees your keys". Prior art to acknowledge in the README/post: `ibus-mcp` (
 only), `pytmb` and `tmb` (Python libraries), Home Assistant's TMB integration.
 
 ## Roadmap to v1 (keep this list up to date)
-- [x] Skeleton: auth set/status, `bus <stop>`, `metro <stations…>` (raw payload), error mapping, tests
-- [ ] Capture one real bus + metro response, sanitize, add as fixtures
-- [ ] Compact, stable output: `{stop, arrivals: [{line, destination, minutes, eta}]}`; `--line` filter
-- [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
-- [ ] Favourites with walking time: `tmb fav add casa 108 --walk 4`, `tmb next casa` → per arrival
-      `make_it: true/false` (answers "¿me da tiempo?")
-- [ ] `SKILL.md` so agents know how to use the CLI
-- [ ] Check TMB terms of use (publishing a client is allowed?) and rate limits; record them above
-- [ ] `--format pretty` for humans (low priority: the official app beats us for humans)
-- [ ] `uv tool install` from GitHub, README demo (3-step key signup), 15 s human-vs-agent video →
-      go public + post
+Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` are noted in brackets.
 
-Later (not v1), roughly by value: `watch` with notifications (ntfy/webhook), `plan A B` via
-`planner/plan`, service alerts (if the API exposes them), `leave` ("¿cuándo salgo?"), Bicing
-availability, train positions per line, MCP server, phase 2 ML (log iBus predictions vs actual
-arrivals; check first whether actual arrivals can be observed at all).
+1. - [x] Skeleton: auth set/status, `bus <stop>`, `metro <stations…>` (raw payload), error mapping
+2. - [x] Error contract: exit codes 1/6/7/130, `retryable`, catch-all by type only, prompts on
+     stderr, `--no-input`, strict JSON [both]
+   - [ ] CI: ruff + pytest on GitHub Actions
+3. - [ ] Real data: opt-in live tests (`TMB_LIVE=1`) and a capture script writing to `captures/`;
+     Alex runs them, then sanitized copies become `tests/fixtures/` [vodafone]
+4. - [ ] `docs/spec.md`: v1 commands, exact JSON shapes, user stories, out of scope. Written after
+     the captures; Alex reviews it before more commands are built [wallapop]
+5. - [ ] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
+     and output models (our stable contract) [vodafone]; compact `bus`/`metro`; `--line` filter
+6. - [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
+7. - [ ] Favourites with walking time: `tmb fav add casa 108 --walk 4`, `tmb next casa` → per arrival
+     `make_it: true/false` (answers "¿me da tiempo?")
+8. - [ ] Agents: `SKILL.md` + `tmb skills get` (the skill ships inside the package) [wallapop];
+     `tmb doctor` (credentials, connectivity, cache age) [wallapop]; README "Using it from a coding
+     agent" section [vodafone]
+9. - [ ] Release: check TMB terms (publishing a client allowed?) and rate limits, record them above;
+     `source-exclude` for secrets in the build, pinned `uv tool install …@vX.Y.Z` + `install.sh`,
+     a packaging test that pins agree, `RELEASING.md` [vodafone]; README demo (3-step key signup),
+     15 s human-vs-agent video → go public + post
+   - [ ] `--format pretty` for humans (low priority: the official app beats us for humans)
+
+Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
+Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API
+exposes them); `leave` ("¿cuándo salgo?"); Bicing availability; MCP server as a thin wrapper that
+runs each command and returns its JSON verbatim, plus `tmb mcp install claude-code` [wallapop];
+prefilled GitHub issue link on `api_changed` [wallapop]; Homebrew tap [vodafone]; train positions
+per line; phase 2 ML (log iBus predictions vs actual arrivals; check first whether actual arrivals
+can be observed at all).
+
+Not borrowed on purpose (we don't need them: two static keys, small command surface): session
+engine/encrypted vault, profiles, proxy, file locks, noun-verb command tree, docs site, npm wrapper.
 
 Possible sibling project with the same pattern: Datadis (own electricity consumption) + PVPC prices.
