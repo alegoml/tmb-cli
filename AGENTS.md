@@ -81,8 +81,10 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
 2. - [x] Error contract: exit codes 1/6/7/130, `retryable`, catch-all by type only, prompts on
      stderr, `--no-input`, strict JSON [both]
    - [x] CI: ruff + pytest on GitHub Actions (runs once the repo is on GitHub)
-3. - [ ] Real data: opt-in live tests (`TMB_LIVE=1`) and a capture script writing to `captures/`;
-     Alex runs them, then sanitized copies become `tests/fixtures/` [vodafone]
+3. - [x] Tooling: opt-in live tests (`TMB_LIVE=1`) and `scripts/capture.py` writing to `captures/`
+     [vodafone]
+   - [ ] Alex runs the captures (bus stop, metro station, `transit/linies/bus`); sanitized copies
+     become `tests/fixtures/`
 4. - [ ] `docs/spec.md`: v1 commands, exact JSON shapes, user stories, out of scope. Written after
      the captures; Alex reviews it before more commands are built [wallapop]
 5. - [ ] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
