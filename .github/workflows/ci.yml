@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - name: install
+        run: uv sync --locked
+      - name: lint
+        run: uv run ruff check .
+      - name: format
+        run: uv run ruff format --check .
+      # Offline by design: tests use httpx.MockTransport and never need TMB keys.
+      - name: test
+        run: uv run pytest
