@@ -30,6 +30,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["live: hits the real TMB API; skipped unless TMB_LIVE=1"]
 
 [tool.ruff]
 line-length = 100
