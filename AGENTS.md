@@ -46,15 +46,30 @@ uv run ruff check . && uv run ruff format .
 - Trip planner: `planner/plan`.
 - Rate limits / terms: unknown until Alex logs into the portal. Record them here.
 
+## Positioning
+The TMB API is public and simple, so an agent could `curl` it directly. The CLI earns its place by
+doing what an agent can't do well alone: keep the keys out of the agent's context, resolve stop
+names to codes, return compact output (fewer tokens than the raw payload), and remember state
+(favourites, walking time). Pitch: "your agent knows your stop, how long you take to get there, and
+never sees your keys". Prior art to acknowledge in the README/post: `ibus-mcp` (MCP server, bus
+only), `pytmb` and `tmb` (Python libraries), Home Assistant's TMB integration.
+
 ## Roadmap to v1 (keep this list up to date)
 - [x] Skeleton: auth set/status, `bus <stop>`, `metro <stations…>` (raw payload), error mapping, tests
 - [ ] Capture one real bus + metro response, sanitize, add as fixtures
-- [ ] Stable output shape: `{stop, arrivals: [{line, destination, minutes, eta}]}`; `--line` filter
+- [ ] Compact, stable output: `{stop, arrivals: [{line, destination, minutes, eta}]}`; `--line` filter
 - [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
-- [ ] Favourites: `tmb fav add casa 108`, `tmb next casa`
-- [ ] `--format pretty` for humans
+- [ ] Favourites with walking time: `tmb fav add casa 108 --walk 4`, `tmb next casa` → per arrival
+      `make_it: true/false` (answers "¿me da tiempo?")
 - [ ] `SKILL.md` so agents know how to use the CLI
-- [ ] `uv tool install` from GitHub, README demo, 15 s human-vs-agent video → go public + post
+- [ ] Check TMB terms of use (publishing a client is allowed?) and rate limits; record them above
+- [ ] `--format pretty` for humans (low priority: the official app beats us for humans)
+- [ ] `uv tool install` from GitHub, README demo (3-step key signup), 15 s human-vs-agent video →
+      go public + post
 
-Later (not v1): `watch` with notifications, `leave` ("¿cuándo salgo?"), train positions per line,
-service alerts, MCP server, phase 2 ML (log iBus predictions vs actual arrivals).
+Later (not v1), roughly by value: `watch` with notifications (ntfy/webhook), `plan A B` via
+`planner/plan`, service alerts (if the API exposes them), `leave` ("¿cuándo salgo?"), Bicing
+availability, train positions per line, MCP server, phase 2 ML (log iBus predictions vs actual
+arrivals; check first whether actual arrivals can be observed at all).
+
+Possible sibling project with the same pattern: Datadis (own electricity consumption) + PVPC prices.
