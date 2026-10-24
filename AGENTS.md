@@ -42,7 +42,7 @@ uv run ruff check . && uv run ruff format .
    ask Alex to run the command and paste (sanitized) output.
 6. Small, reviewable changes. Explain briefly what you changed and why: Alex owns the design.
 
-## TMB API notes (verified 23/10/2026)
+## TMB API notes (verified 23/10/2026; response shapes in `docs/tmb-api.md`)
 - Free keys at developer.tmb.cat (create an application). Auth = `app_id` + `app_key` query params;
   without them every endpoint returns 401 "Authentication parameters missing".
 - Bus real time: `itransit/bus/parades/{stop_code}`.
@@ -101,8 +101,9 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
      [vodafone]
    - [ ] Alex runs the captures (bus stop, metro station, `transit/linies/bus`); synthetic
      fixtures with the same shape go in `tests/fixtures/`
-4. - [ ] `docs/spec.md`: v1 commands, exact JSON shapes, user stories, out of scope. Written after
-     the captures; Alex reviews it before more commands are built [wallapop]
+4. - [x] `docs/tmb-api.md`: response shapes from the public swagger (to confirm with captures)
+   - [x] `docs/spec.md` draft: v1 commands, JSON shapes, user stories, decisions D1–D9 [wallapop]
+   - [ ] Alex picks D1–D9; spec updated after the captures. No new commands before that
 5. - [ ] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
      and output models (our stable contract) [vodafone]; compact `bus`/`metro`; `--line` filter
 6. - [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
