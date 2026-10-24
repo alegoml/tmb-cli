@@ -80,7 +80,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
 1. - [x] Skeleton: auth set/status, `bus <stop>`, `metro <stations…>` (raw payload), error mapping
 2. - [x] Error contract: exit codes 1/6/7/130, `retryable`, catch-all by type only, prompts on
      stderr, `--no-input`, strict JSON [both]
-   - [ ] CI: ruff + pytest on GitHub Actions
+   - [x] CI: ruff + pytest on GitHub Actions (runs once the repo is on GitHub)
 3. - [ ] Real data: opt-in live tests (`TMB_LIVE=1`) and a capture script writing to `captures/`;
      Alex runs them, then sanitized copies become `tests/fixtures/` [vodafone]
 4. - [ ] `docs/spec.md`: v1 commands, exact JSON shapes, user stories, out of scope. Written after
