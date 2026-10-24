@@ -40,10 +40,18 @@ def find_credentials() -> Credentials | None:
         return Credentials(app_id, app_key, "env")
 
     path = credentials_path()
-    if path.is_file():
+    if not path.is_file():
+        return None
+    try:
         data = json.loads(path.read_text())
-        if data.get("app_id") and data.get("app_key"):
-            return Credentials(data["app_id"], data["app_key"], "file")
+    except (OSError, ValueError):
+        # Never echo the file's content: it holds the key.
+        raise MissingCredentials(
+            "The credentials file is unreadable or not valid JSON.",
+            hint="Run `tmb auth set` to write it again.",
+        ) from None
+    if isinstance(data, dict) and data.get("app_id") and data.get("app_key"):
+        return Credentials(str(data["app_id"]), str(data["app_key"]), "file")
     return None
 
 

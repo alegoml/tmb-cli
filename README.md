@@ -39,16 +39,32 @@ tmb metro 123 115        # next trains at metro stations 123 and 115
 tmb bus 108 | jq .
 ```
 
-Errors are printed to stderr as JSON (`{"error": {"code": ..., "message": ..., "hint": ...}}`) with
-stable exit codes:
+Errors are printed to stderr as one line of JSON, with stable exit codes:
 
-| Exit code | Meaning |
-|---|---|
-| 0 | OK |
-| 2 | Bad usage |
-| 3 | Missing or rejected credentials |
-| 4 | Not found |
-| 5 | TMB API or network failure |
+```json
+{"error": {"code": "rate_limited", "message": "…", "exit_code": 5, "retryable": true, "hint": "…"}}
+```
+
+| Exit code | `code` | Meaning |
+|---|---|---|
+| 0 | | OK |
+| 1 | `internal` | Unexpected error (only the exception type is reported) |
+| 2 | `usage` | Bad usage, cancelled prompt, or a prompt was needed under `--no-input` |
+| 3 | `missing_credentials`, `auth_failed` | Missing, unreadable or rejected credentials |
+| 4 | `not_found` | Unknown stop or station |
+| 5 | `api_error`, `rate_limited` | TMB API error or rate limit |
+| 6 | `network_error` | Network failure or timeout |
+| 7 | `api_changed` | Unexpected response shape: the TMB API probably changed |
+| 130 | `interrupted` | Interrupted (Ctrl-C) |
+
+`retryable: true` means trying again later may work (rate limit, TMB 5xx, network); `false` means
+retrying won't help until something changes.
+
+Argument errors caught by the parser itself (a missing stop code, an unknown option) are still
+printed as plain text, with exit code 2.
+
+Scripts and agents should pass `--no-input` (or set `TMB_NO_INPUT=1`) so the CLI never waits for a
+prompt.
 
 ## Development
 

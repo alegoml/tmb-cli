@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from tmb_cli.client import TmbClient
-from tmb_cli.errors import ApiError, AuthFailed, NetworkError, NotFound
+from tmb_cli.errors import ApiChanged, ApiError, AuthFailed, NetworkError, NotFound, RateLimited
 
 FAKE_ID = "test-id"
 FAKE_KEY = "test-secret-key"
@@ -49,13 +49,23 @@ def test_metro_requires_a_station():
 
 
 @pytest.mark.parametrize(
-    ("status", "error"),
-    [(401, AuthFailed), (403, AuthFailed), (404, NotFound), (429, ApiError), (500, ApiError)],
+    ("status", "error", "exit_code", "retryable"),
+    [
+        (401, AuthFailed, 3, False),
+        (403, AuthFailed, 3, False),
+        (404, NotFound, 4, False),
+        (429, RateLimited, 5, True),
+        (400, ApiError, 5, False),
+        (500, ApiError, 5, True),
+        (503, ApiError, 5, True),
+    ],
 )
-def test_http_errors_map_to_typed_errors(status, error):
+def test_http_errors_map_to_typed_errors(status, error, exit_code, retryable):
     with make_client(lambda r: httpx.Response(status, text="nope")) as client:
         with pytest.raises(error) as excinfo:
             client.bus_arrivals("108")
+    assert excinfo.value.exit_code == exit_code
+    assert excinfo.value.retryable is retryable
     assert FAKE_KEY not in excinfo.value.message
 
 
@@ -64,11 +74,15 @@ def test_network_failure_is_a_network_error():
         raise httpx.ConnectError("boom", request=request)
 
     with make_client(handler) as client:
-        with pytest.raises(NetworkError):
+        with pytest.raises(NetworkError) as excinfo:
             client.bus_arrivals("108")
+    assert excinfo.value.exit_code == 6
+    assert excinfo.value.retryable is True
 
 
-def test_non_json_response_is_an_api_error():
-    with make_client(lambda r: httpx.Response(200, text="<html>")) as client:
-        with pytest.raises(ApiError):
+@pytest.mark.parametrize("body", ["<html>", '{"t": NaN}', '{"t": Infinity}', '{"t": 1e400}'])
+def test_invalid_or_non_finite_json_means_the_api_changed(body):
+    with make_client(lambda r: httpx.Response(200, text=body)) as client:
+        with pytest.raises(ApiChanged) as excinfo:
             client.bus_arrivals("108")
+    assert excinfo.value.exit_code == 7

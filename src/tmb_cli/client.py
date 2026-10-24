@@ -5,12 +5,25 @@ which is what the TMB API expects. Error messages never echo the request URL,
 because it contains the credentials.
 """
 
+import math
+
 import httpx
 
-from tmb_cli.errors import ApiError, AuthFailed, NetworkError, NotFound
+from tmb_cli.errors import ApiChanged, ApiError, AuthFailed, NetworkError, NotFound, RateLimited
 
 BASE_URL = "https://api.tmb.cat/v1/"
 DEFAULT_TIMEOUT = 10.0
+
+
+def _reject_constant(name: str) -> None:
+    raise ValueError(f"non-finite number {name}")  # NaN / Infinity, which json accepts by default
+
+
+def _finite_float(text: str) -> float:
+    value = float(text)
+    if not math.isfinite(value):  # e.g. 1e400
+        raise ValueError(f"non-finite number {text}")
+    return value
 
 
 class TmbClient:
@@ -57,14 +70,22 @@ class TmbClient:
         if status == 404:
             raise NotFound(f"Nothing found at `{path}` (HTTP 404).")
         if status == 429:
-            raise ApiError("TMB API rate limit reached (HTTP 429). Try again later.")
+            raise RateLimited(
+                "TMB API rate limit reached (HTTP 429).", hint="Wait a while before retrying."
+            )
+        if status >= 500:
+            raise ApiError(f"TMB API returned HTTP {status}.", retryable=True)
         if status >= 400:
             raise ApiError(f"TMB API returned HTTP {status}.")
 
         try:
-            return response.json()
+            # Strict JSON: NaN/Infinity are not JSON and must never reach our output.
+            return response.json(parse_constant=_reject_constant, parse_float=_finite_float)
         except ValueError:
-            raise ApiError("TMB API returned a response that is not JSON.") from None
+            raise ApiChanged(
+                "TMB API returned a response that is not valid JSON.",
+                hint="The TMB API may have changed; please open an issue.",
+            ) from None
 
     # --- real-time arrivals -------------------------------------------------
     # The output is the raw API payload for now. Shape it into our own stable

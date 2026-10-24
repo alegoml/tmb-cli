@@ -24,8 +24,11 @@ uv run ruff check . && uv run ruff format .
 ```
 
 ## Rules
-1. **JSON on stdout, JSON errors on stderr**, exit codes from `errors.py` (0 ok, 2 usage,
-   3 credentials, 4 not found, 5 API/network). Never print prose to stdout in JSON mode.
+1. **JSON on stdout, JSON errors on stderr**, exit codes from `errors.py` (0 ok, 1 internal,
+   2 usage, 3 credentials, 4 not found, 5 API/rate limit, 6 network, 7 API changed,
+   130 interrupted). Never print prose to stdout in JSON mode; prompts go to stderr
+   (`typer.prompt(..., err=True)`). Every command runs through `cli._run`, which turns any
+   exception into the JSON error (unknown ones by type only).
 2. **Credentials are secret.** Never print, log, commit or put `app_id`/`app_key` in error
    messages, fixtures or test names. The request URL contains them: don't echo it.
 3. **Tests never hit the network.** Use `httpx.MockTransport`. Fixtures captured from the real API
