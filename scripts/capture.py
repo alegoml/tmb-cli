@@ -7,8 +7,8 @@ Usage (credentials from `tmb auth set` or TMB_APP_ID/TMB_APP_KEY):
     uv run python scripts/capture.py transit/linies/bus
 
 Each argument is a GET path under https://api.tmb.cat/v1/. Any occurrence of your app_id or app_key
-in a response is replaced with "REDACTED" before it is written. Review a capture anyway before
-copying it to tests/fixtures/.
+in a response is replaced with "REDACTED" before it is written. Captures never go in the repo:
+tests/fixtures/ holds synthetic responses with the same shape (see AGENTS.md rule 3).
 """
 
 import json

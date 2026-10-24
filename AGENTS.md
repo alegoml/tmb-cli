@@ -31,9 +31,11 @@ uv run ruff check . && uv run ruff format .
    exception into the JSON error (unknown ones by type only).
 2. **Credentials are secret.** Never print, log, commit or put `app_id`/`app_key` in error
    messages, fixtures or test names. The request URL contains them: don't echo it.
-3. **Tests never hit the network.** Use `httpx.MockTransport`. Fixtures captured from the real API
-   must be sanitized (no keys) before they go in `tests/fixtures/`. Raw captures go in `captures/`
-   (git-ignored).
+3. **Tests never hit the network.** Use `httpx.MockTransport`. Real responses go only in
+   `captures/` (git-ignored, never committed) and are used to learn the response shape.
+   `tests/fixtures/` holds **synthetic** responses: the same structure and field names as a real
+   capture, but made-up values (lines like `X1`, stops like `0001`, names like "Destí de prova").
+   No real TMB data and no stop that hints where Alex lives: the repo will be public.
 4. **Read-only.** Only GET endpoints of the official API at `https://api.tmb.cat/v1/`. Don't use
    third-party backends (e.g. andana.bcn.am) or scrape tmb.cat.
 5. **Don't invent API fields.** Shape output only from fields seen in real responses; when unsure,
@@ -83,8 +85,8 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
    - [x] CI: ruff + pytest on GitHub Actions (runs once the repo is on GitHub)
 3. - [x] Tooling: opt-in live tests (`TMB_LIVE=1`) and `scripts/capture.py` writing to `captures/`
      [vodafone]
-   - [ ] Alex runs the captures (bus stop, metro station, `transit/linies/bus`); sanitized copies
-     become `tests/fixtures/`
+   - [ ] Alex runs the captures (bus stop, metro station, `transit/linies/bus`); synthetic
+     fixtures with the same shape go in `tests/fixtures/`
 4. - [ ] `docs/spec.md`: v1 commands, exact JSON shapes, user stories, out of scope. Written after
      the captures; Alex reviews it before more commands are built [wallapop]
 5. - [ ] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
