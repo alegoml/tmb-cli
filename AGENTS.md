@@ -49,7 +49,21 @@ uv run ruff check . && uv run ruff format .
 - Metro real time: `itransit/metro/estacions?estacions=<code>,<code>`.
 - Static network: `transit/linies/{bus|metro}`, `transit/linies/bus/{line}/recs`, …
 - Trip planner: `planner/plan`.
-- Rate limits / terms: unknown until Alex logs into the portal. Record them here.
+
+From the portal's public swagger (read 24/10/2026; not yet confirmed by a capture):
+- All bus stops: `transit/parades` (GeoJSON; `CODI_PARADA`, `NOM_PARADA`, `DESC_PARADA`, …),
+  `transit/parades/{code}`, `?filter=FIELD=value`. Metro stations: `transit/estacions`,
+  `transit/linies/metro/{line}/estacions`. Static GTFS: `static/datasets/gtfs.zip`.
+- Legacy iBus (`stops/{code}`, `lines/{line}/stops/{code}`) is deprecated: don't use it.
+- No service-alerts endpoint; only an `alerts` field inside `planner/plan` responses.
+- Rate limits: not stated in the swagger or the terms. Alex to check his app's page in the portal.
+
+Terms (developer.tmb.cat/docs/terms-conditions, read 24/10/2026): free, non-exclusive, worldwide,
+indefinite licence to reproduce, distribute and make derived works of the GTFS and API data. We
+must **cite the source (TMB) and the date of last update**, **not alter or distort the data**, and
+use it only for the application declared when the key was created (users should register their
+app as tmb-cli). TMB may change the API, data or terms at any time without notice. Publishing a
+client isn't addressed; each user accepts the terms with their own key.
 
 ## Language
 Use these words in code, output and docs; avoid the alternatives. [wallapop's CONTEXT.md habit]
@@ -97,7 +111,8 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
 8. - [ ] Agents: `SKILL.md` + `tmb skills get` (the skill ships inside the package) [wallapop];
      `tmb doctor` (credentials, connectivity, cache age) [wallapop]; README "Using it from a coding
      agent" section [vodafone]
-9. - [ ] Release: check TMB terms (publishing a client allowed?) and rate limits, record them above;
+9. - [ ] Release: TMB attribution in README (and in the output if the spec decides so); rate limits
+     from Alex's portal page;
      `source-exclude` for secrets in the build, pinned `uv tool install …@vX.Y.Z` + `install.sh`,
      a packaging test that pins agree, `RELEASING.md` [vodafone]; README demo (3-step key signup),
      15 s human-vs-agent video → go public + post
