@@ -5,7 +5,7 @@ What we know about the endpoints tmb-cli uses. Source: the public swagger files 
 read 24/10/2026. Local copies for reference live in `captures/swagger/` (git-ignored).
 
 **Status:** bus and metro real time, `transit/parades`, `transit/estacions`, `transit/linies/{bus,metro}`
-and `transit/linies/metro/1/estacions` **confirmed by captures on 25/10/2026** (marked ✅ below).
+and `transit/linies/metro/{1,3}/estacions` **confirmed by captures on 25/10/2026** (marked ✅ below).
 The rest is from the swagger only. Where the swagger and a capture disagree, the capture wins
 (AGENTS.md rule 5).
 
@@ -137,9 +137,10 @@ Filters (swagger, not tried yet): `…/{code}` for one element, `?filter=FIELD=v
   types it as a string in places. Accept both.
 - ✅ The real-time metro `codi_estacio` is `CODI_ESTACIO` from
   `transit/linies/metro/{line}/estacions`, **not** `CODI_GRUP_ESTACIO` (checked on L1).
-  Open: does an interchange (Catalunya: 126 on L1) answer for its other lines with the same code,
-  or does each line have its own (L3's Catalunya code)? Needs `transit/linies/metro/3/estacions`
-  and a real-time capture.
+  ✅ **Each line has its own code at an interchange**: Catalunya is 126 on L1 and 326 on L3, and
+  real time for `126` returns only L1 trains. What ties them together is `CODI_GRUP_ESTACIO`
+  (6660126 for both), which is also the key of `transit/estacions`. So "Catalunya, all lines" =
+  every `CODI_ESTACIO` with that group = `?estacions=126,326`.
 - Static `CODI_PARADA` is a **number**; real-time `codi_parada` is a **string**. Normalise to string.
 - Bad credentials give 401, not the swagger's 403.
 - An unknown bus stop gives 200 with an empty `parades`, not 404.

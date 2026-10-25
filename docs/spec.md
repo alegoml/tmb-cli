@@ -90,7 +90,9 @@ and empty arrivals.
 ```
 
 (Values made up, except that 126 is Catalunya on L1: real-time codes are per line, from
-`transit/linies/metro/{line}/estacions`.) The API groups by line; we regroup by station. The real-time response has **no station name**:
+`transit/linies/metro/{line}/estacions`; Catalunya on L3 is 326.) The API groups by line; we
+regroup by station. `tmb metro 126` gives only L1; to see every line at an interchange, pass all its
+codes (`tmb metro 126 326`), which `tmb stops` returns (D10). The real-time response has **no station name**:
 `name` comes from the stops cache, `null` if there's no cache yet. Same rules for `minutes`,
 sorting and `--line` as `bus`.
 
@@ -115,6 +117,10 @@ active stops only; no "not in use" marker was seen.) `updated_at` is TMB's datas
 of the cached network. Default `--limit 10`. The stops of a bus stop's lines aren't in
 `transit/parades`, so v1 doesn't list lines per bus stop.
 
+- **D10. Metro interchanges in `stops`?** Real-time codes are per line (Catalunya: 126 on L1, 326
+  on L3), joined by the group code. *Recommend* one result per station with all its codes,
+  `{"type": "metro", "name": "Catalunya", "codes": {"L1": "126", "L3": "326"}}`, so the agent
+  passes them all to `tmb metro`. (Alternative: one result per line, as drafted above.)
 - **D4. Cache refresh?** *Recommend*: download on first use, refresh automatically when older than
   7 days, `tmb stops --refresh` to force it. Stored in `$XDG_CACHE_HOME/tmb-cli/`.
 
