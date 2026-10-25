@@ -63,11 +63,25 @@ def test_download_keeps_codes_and_names_and_joins_interchanges(net):
         "description": None,
     }
     assert [s.model_dump() for s in net.stations] == [
-        {"name": "Prova", "codes": {"X9": "901", "X8": "801"}},
+        {"name": "Prova", "codes": {"X8": "801", "X9": "901"}},
         {"name": "Estació Inventada", "codes": {"X9": "902"}},
     ]
     assert net.station_name("801") == "Prova"
     assert net.station_name("999") is None
+
+
+def test_lines_sort_by_number_then_others():
+    lines = ["FM", "L10S", "L3", "L9N", "L1", "L10N", "L9S", "L11"]
+    assert sorted(lines, key=network.line_order) == [
+        "L1",
+        "L3",
+        "L9N",
+        "L9S",
+        "L10N",
+        "L10S",
+        "L11",
+        "FM",
+    ]
 
 
 def test_cache_is_reused_while_fresh(net):
@@ -105,7 +119,7 @@ def _found(results) -> list:
 
 
 def test_search_ranks_exact_names_first_then_metro_then_bus(net):
-    assert _found(network.search(net, "prova")) == [{"X9": "901", "X8": "801"}, "1", "3"]
+    assert _found(network.search(net, "prova")) == [{"X8": "801", "X9": "901"}, "1", "3"]
 
 
 def test_search_matches_word_prefixes_abbreviations_and_codes(net):
@@ -117,7 +131,7 @@ def test_search_matches_word_prefixes_abbreviations_and_codes(net):
 
 def test_search_filters_and_limit(net):
     assert _found(network.search(net, "prova", metro=False)) == ["1", "3"]
-    assert _found(network.search(net, "prova", bus=False)) == [{"X9": "901", "X8": "801"}]
+    assert _found(network.search(net, "prova", bus=False)) == [{"X8": "801", "X9": "901"}]
     assert len(network.search(net, "prova", limit=1)) == 1
 
 
@@ -132,7 +146,7 @@ def test_cli_stops(fake_api):
     assert json.loads(result.stdout) == {
         "query": "Prova",
         "results": [
-            {"type": "metro", "name": "Prova", "codes": {"X9": "901", "X8": "801"}},
+            {"type": "metro", "name": "Prova", "codes": {"X8": "801", "X9": "901"}},
             {
                 "type": "bus",
                 "code": "1",

@@ -85,6 +85,12 @@ def save(network: Network) -> None:
     os.replace(tmp, path)  # never leave half a file behind
 
 
+def line_order(line: str) -> tuple[bool, int, str]:
+    """L1, L2, …, L9N, L9S, L10N, L10S, L11, then FM (TMB lists lines in another order)."""
+    match = re.fullmatch(r"L(\d+)(.*)", line)
+    return (False, int(match[1]), match[2]) if match else (True, 0, line)
+
+
 def download(client: TmbClient) -> Network:
     """13 requests: all bus stops, the metro lines, then the stations of each line."""
     stops = parse(WireStops, client.bus_stops())
@@ -113,7 +119,12 @@ def download(client: TmbClient) -> Network:
             )
             for f in stops.features
         ],
-        stations=list(groups.values()),
+        stations=[
+            CachedStation(
+                name=s.name, codes=dict(sorted(s.codes.items(), key=lambda c: line_order(c[0])))
+            )
+            for s in groups.values()
+        ],
     )
 
 
