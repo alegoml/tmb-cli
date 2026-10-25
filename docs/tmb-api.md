@@ -142,9 +142,9 @@ Filters (swagger, not tried yet): `…/{code}` for one element, `?filter=FIELD=v
   (6660126 for both), which is also the key of `transit/estacions`. So "Catalunya, all lines" =
   every `CODI_ESTACIO` with that group = `?estacions=126,326`.
 - `transit/parades` lists **TMB's stops only** (2708; 8 in Badalona, none for TUSGSAL's lines).
-  Real-time responses can include other AMB operators' lines (`transit_namespace: "amb"`). Open:
-  does `itransit/bus/parades/{code}` answer for a stop served only by another operator (e.g. a
-  TUSGSAL stop code)? Needs a capture.
+  Real-time responses can include other AMB operators' lines (`transit_namespace: "amb"`) at TMB
+  stops, but ✅ a stop served only by another operator (a TUSGSAL stop in Badalona, 25/10/2026)
+  answers `parades: []`, like an unknown code: no real time for other operators' stops.
 - Static `CODI_PARADA` is a **number**; real-time `codi_parada` is a **string**. Normalise to string.
 - Bad credentials give 401, not the swagger's 403.
 - An unknown bus stop gives 200 with an empty `parades`, not 404.

@@ -174,7 +174,10 @@ def _bus(stop: str, lines: list[str]) -> BusArrivals:
     # TMB answers an unknown stop like one with no data: only the cache can tell them apart.
     cached = network.load_cached() if result.stop.name is None else None
     if cached and not cached.has_stop(str(int(stop))):
-        raise NotFound(f"No bus stop {stop}.", hint="Find it with `tmb stops <name>`.")
+        raise NotFound(
+            f"{stop} is not a TMB bus stop.",
+            hint="Find TMB stops with `tmb stops <name>`; other operators' stops aren't covered.",
+        )
     return result
 
 

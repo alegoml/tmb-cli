@@ -66,7 +66,7 @@ Ask the user for the stop (name or code) and how many minutes they walk to it, t
 |---|---|---|
 | 2 | `usage` | Fix the command (the message says what's wrong). |
 | 3 | `missing_credentials`, `auth_failed` | Ask the user to run `tmb auth set` **in their own terminal**. Never ask for, read, print or pass the keys yourself. |
-| 4 | `not_found` | Unknown stop, station or favourite: search with `tmb stops`, or check `tmb fav list`. |
+| 4 | `not_found` | Unknown stop, station or favourite, or another operator's stop (TMB has no data for those): search with `tmb stops`, or check `tmb fav list`. |
 | 5 | `rate_limited`, `api_error` | If `retryable` is `true`, wait a little and retry once. |
 | 6 | `network_error` | Retry once; then tell the user TMB can't be reached. |
 | 7 | `api_changed` | TMB changed its API: tell the user; retrying won't help. |
