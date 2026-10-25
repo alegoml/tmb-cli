@@ -31,9 +31,18 @@ with their walk time.
   means it's too late for that one.
 - `make_it`: `true` if they can catch it (`leave_in` ≥ `--margin`, 0 by default).
 
-Answer with the first arrival where `make_it` is `true`, and say when to leave: "El V15 de las
-18:06 no lo pillas; el siguiente pasa en 11 min, sal en 7." Use `--margin 2` if the user wants
-spare time. Without a favourite, `tmb next 1103 --walk 4` works too (`--metro` for a station code).
+Answer with the first arrival where `make_it` is `true`, say when to leave, and **always say the
+walk time you counted** (`favourite.walk_minutes`) and the stop, so the user can correct it:
+"Contando 4 min andando hasta Pl Catalunya: el V15 de las 18:06 no lo pillas; el siguiente pasa en
+11 min, sal en 7." Use `--margin 2` if the user wants spare time.
+
+The walk time is the user's, never yours:
+
+- If the user gives a different time for today ("hoy voy con prisa, tardo 2"), pass `--walk 2`
+  for that call; it doesn't change the favourite. To change it for good, `fav add` the same name
+  again with the new `--walk` (it replaces the old one).
+- Without a favourite, `tmb next 1103 --walk 4` works too (`--metro` for a station code), but
+  **ask how many minutes they walk** first: don't guess a number. Offer to save it as a favourite.
 
 ## Saving a favourite
 
