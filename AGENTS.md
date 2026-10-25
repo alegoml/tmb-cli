@@ -7,7 +7,7 @@ stay in English.
 ## What this is
 An unofficial, JSON-first CLI for TMB (Barcelona) real-time bus and metro arrivals, built so that
 coding agents can answer things like "¿me da tiempo a pillar el V15?". Inspired by
-`Microck/wallapop-cli` and `luisgonzaleznf/vodafone-cli`. Private repo until v1, then public.
+`Microck/wallapop-cli` and `luisgonzaleznf/vodafone-cli`. Public on GitHub since 25/10/2026 (`alegoml/tmb-cli`).
 
 ## Stack and layout
 - Python 3.12+, uv, Typer (CLI), httpx (HTTP), pytest, ruff.
@@ -128,7 +128,8 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
      published); `source-exclude`/`wheel-exclude` for secrets, pinned
      `uv tool install git+…@vX.Y.Z` + `install.sh`, a packaging test (pins agree, no secrets
      shipped), `RELEASING.md` [vodafone]. Distribution: GitHub tags only, no PyPI (Alex, 25/10/2026)
-   - [ ] Go public: create `alegoml/tmb-cli` on GitHub, push, tag `v0.1.0`, GitHub release
+   - [x] Go public: `alegoml/tmb-cli` on GitHub (25/10/2026), tested by Alex by hand, installed
+     from GitHub, with Claude Code and with his phone agent; tag `v0.1.0` + GitHub release
    - [ ] README demo (3-step key signup) + 15 s human-vs-agent video → post
    - [-] `--format pretty` for humans: not in v1 (D9)
 
