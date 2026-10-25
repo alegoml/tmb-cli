@@ -147,6 +147,11 @@ def test_search_matches_the_town_too(net):
     assert _found(network.search(net, "rambla vila")) == ["2"]
 
 
+def test_a_town_match_beats_a_description_match():
+    assert network.rank("badalona", "Pavelló Olímpic", "Alfons XIII", "Badalona") == 4
+    assert network.rank("badalona", "Metro Provençana", "Aprestadora/Badalona", "L'Hospitalet") == 5
+
+
 def test_cli_stops_takes_words_without_quotes(fake_api):
     out = json.loads(runner.invoke(app, ["stops", "carrer", "fals"]).stdout)
     assert out["query"] == "carrer fals"

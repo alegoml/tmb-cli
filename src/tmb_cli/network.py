@@ -162,9 +162,11 @@ def _all_tokens(tokens: list[str], words: list[str]) -> bool:
     return all(any(word.startswith(token) for word in words) for token in tokens)
 
 
-def rank(query: str, name: str, *extra: str | None) -> int | None:
+def rank(
+    query: str, name: str, description: str | None = None, town: str | None = None
+) -> int | None:
     """Lower is better: exact name, name prefix, every word in the name, substring of the name,
-    every word in the name plus `extra` (description, town). None if it doesn't match."""
+    every word in name + town, every word in name + town + description. None if no match."""
     name = normalize(name)
     tokens = query.split()
     if name == query:
@@ -175,9 +177,11 @@ def rank(query: str, name: str, *extra: str | None) -> int | None:
         return 2
     if query in name:
         return 3
-    more = " ".join(normalize(text) for text in extra if text)
-    if more and _all_tokens(tokens, f"{name} {more}".split()):
+    town = normalize(town or "")
+    if town and _all_tokens(tokens, f"{name} {town}".split()):
         return 4
+    if description and _all_tokens(tokens, f"{name} {town} {normalize(description)}".split()):
+        return 5  # e.g. a street named after the town: "Aprestadora/Badalona" in L'Hospitalet
     return None
 
 

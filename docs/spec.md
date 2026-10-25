@@ -119,7 +119,7 @@ with its per-line codes joined by `CODI_GRUP_ESTACIO` (D10). The cache keeps onl
 and punctuation, and spells street types the way TMB
 abbreviates them (plaça → pl, avinguda → av, passeig → pg, carretera → ctra). Ranking: a stop
 code or an exact name, then name prefix, then every query word starting a word of the name, then
-substring of the name, then every query word in name + description + town. Ties: metro, then Barcelona
+substring of the name, then every query word in name + town, then in name + town + description. Ties: metro, then Barcelona
 bus stops, then other towns' (83% of stops are in Barcelona; Alex, 25/10/2026); then the earlier
 the query appears in the name; then the name. Bus results carry `town` (`NOM_POBLACIO`) so the
 agent can tell two "Av Catalunya" apart. (`transit/parades` seems to list
