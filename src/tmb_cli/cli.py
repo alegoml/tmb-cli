@@ -1,7 +1,12 @@
 """Command-line entry point (`tmb`)."""
 
+import os
+import stat
+import sys
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from importlib.resources import files
 from typing import Annotated, NoReturn
 
 import typer
@@ -17,7 +22,7 @@ from tmb_cli.config import (
     mask,
     save_credentials,
 )
-from tmb_cli.errors import Interrupted, NotFound, TmbError, UsageError
+from tmb_cli.errors import Interrupted, MissingCredentials, NotFound, TmbError, UsageError
 from tmb_cli.favourites import Favourite
 from tmb_cli.models import BusArrivals, MetroArrivals, StopSearch, Target
 from tmb_cli.output import emit, emit_error
@@ -34,6 +39,8 @@ fav_app = typer.Typer(
     help="Favourite stops and stations, with your walk time to them.", no_args_is_help=True
 )
 app.add_typer(fav_app, name="fav")
+skills_app = typer.Typer(help="The guide for coding agents (SKILL.md).", no_args_is_help=True)
+app.add_typer(skills_app, name="skills")
 
 
 def _version(value: bool) -> None:
@@ -71,12 +78,17 @@ def _fail(err: TmbError) -> NoReturn:
     raise typer.Exit(err.exit_code)
 
 
-def _run(action: Callable[[], object]) -> None:
-    """Run a command body and print its result as JSON. Every command goes through here, so any
-    failure becomes the JSON error on stderr: our typed errors as they are, anything else by its
-    exception type only (messages can embed the request URL, which carries the credentials)."""
+def _run(action: Callable[[], object], *, text: bool = False) -> None:
+    """Run a command body and print its result as JSON (or as is, with `text`). Every command goes
+    through here, so any failure becomes the JSON error on stderr: our typed errors as they are,
+    anything else by its exception type only (messages can embed the request URL, which carries
+    the credentials)."""
     try:
-        emit(action())
+        result = action()
+        if text:
+            sys.stdout.write(str(result))
+        else:
+            emit(result)
     except typer.Exit:
         raise
     except TmbError as err:
@@ -327,6 +339,87 @@ def stops(
         return StopSearch(query=query, results=results, updated_at=net.updated_at).model_dump()
 
     _run(action)
+
+
+# --- agents ------------------------------------------------------------------------
+
+
+@skills_app.command("get")
+def skills_get() -> None:
+    """Print SKILL.md, the guide for coding agents (Markdown, the one non-JSON output)."""
+    _run(lambda: files("tmb_cli").joinpath("SKILL.md").read_text(encoding="utf-8"), text=True)
+
+
+DOCTOR_STOP = "1103"  # any stop works: one small real-time request checks the keys
+
+
+def _check(name: str, ok: bool, detail: str, err: TmbError | None = None) -> dict:
+    check = {"name": name, "ok": ok, "detail": detail}
+    if err:
+        check["code"] = err.code
+        check["exit_code"] = err.exit_code
+    return check
+
+
+def _doctor_checks() -> list[dict]:
+    checks = []
+    try:
+        creds = find_credentials()
+    except TmbError as err:
+        creds = None
+        checks.append(_check("credentials", False, err.message, err))
+    else:
+        if creds is None:
+            err = MissingCredentials("Not set: run `tmb auth set`.")
+            checks.append(_check("credentials", False, err.message, err))
+        elif creds.source == "env":
+            checks.append(_check("credentials", True, f"from {ENV_APP_ID}/{ENV_APP_KEY}"))
+        else:
+            mode = stat.S_IMODE(os.stat(credentials_path()).st_mode)
+            warn = "" if mode & 0o077 == 0 else ": others can read it, run `chmod 600` on it"
+            checks.append(_check("credentials", True, f"from file, mode {mode:04o}{warn}"))
+
+    if creds is None:
+        checks.append(_check("api", False, "Skipped: no credentials."))
+    else:
+        try:
+            with TmbClient(creds.app_id, creds.app_key) as client:
+                arrivals.bus_arrivals(client.bus_arrivals(DOCTOR_STOP), DOCTOR_STOP, [])
+            checks.append(_check("api", True, "TMB API answered with these credentials."))
+        except TmbError as err:
+            checks.append(_check("api", False, err.message, err))
+
+    cached = network.load_cached()
+    if cached is None:
+        checks.append(_check("cache", True, "Not downloaded yet: `tmb stops <name>` does it."))
+    else:
+        days = int((time.time() - cached.downloaded_at) // 86400)
+        checks.append(_check("cache", True, f"{days} days old, TMB data of {cached.updated_at}"))
+
+    try:
+        count = len(favourites.load().favourites)
+        checks.append(_check("favourites", True, f"{count} saved"))
+    except TmbError as err:
+        checks.append(_check("favourites", False, err.message, err))
+    return checks
+
+
+@app.command()
+def doctor() -> None:
+    """Check credentials, API access, the stops cache and favourites. Exit code: the first
+    failing check's."""
+    exit_code = 0
+
+    def action() -> object:
+        nonlocal exit_code
+        checks = _doctor_checks()
+        failed = [c for c in checks if not c["ok"]]
+        exit_code = failed[0].get("exit_code", 1) if failed else 0
+        return {"ok": not failed, "version": __version__, "checks": checks}
+
+    _run(action)
+    if exit_code:
+        raise typer.Exit(exit_code)
 
 
 def main() -> None:

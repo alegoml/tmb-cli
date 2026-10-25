@@ -4,8 +4,8 @@ Unofficial command-line client for **TMB** (Transports Metropolitans de Barcelon
 metro arrivals from your terminal. Output is JSON, so shell pipelines (`jq`) and coding agents
 (Claude Code, Codex, Hermes…) can use it directly.
 
-> **Status: work in progress (v0.1).** Commands return the raw TMB payload for now; a stable,
-> documented JSON shape comes next. Not affiliated with or endorsed by TMB.
+> **Status: work in progress (v0.1), not released yet.** Not affiliated with or endorsed by TMB.
+> Data: TMB's open API, credited in every response (`"source": "TMB"`, `updated_at`).
 
 ## Requirements
 
@@ -94,6 +94,29 @@ printed as plain text, with exit code 2.
 
 Scripts and agents should pass `--no-input` (or set `TMB_NO_INPUT=1`) so the CLI never waits for a
 prompt.
+
+## Using it from a coding agent
+
+The point of `tmb` is that your agent (Claude Code, Codex, …) can answer "¿me da tiempo a pillar
+el V15?" without ever seeing your TMB keys, and remembers your stop and how long you take to get
+there.
+
+1. **You** set the keys once, in your own terminal (not through the agent): `tmb auth set`.
+2. Give your agent the guide. It ships with the CLI:
+   ```bash
+   tmb skills get                                   # print it
+   mkdir -p ~/.claude/skills/tmb && tmb skills get > ~/.claude/skills/tmb/SKILL.md   # Claude Code
+   ```
+   For other agents, point them at `tmb skills get` or paste it into their instructions
+   (`AGENTS.md`).
+3. Ask: "guarda mi parada de casa, la 1103, tardo 4 minutos" → `tmb fav add casa 1103 --walk 4`.
+   Then "¿me da tiempo?" → `tmb --no-input next casa`.
+
+Why a CLI and not raw `curl` against the API: the keys stay out of the agent's context (and out of
+its logs), stop names resolve to codes (`tmb stops`), the output is compact (a fraction of the raw
+payload's tokens), favourites and walk times persist between sessions, and failures come as typed
+JSON with exit codes the agent can act on. `tmb doctor` checks the keys, API access, the stops
+cache and the favourites file in one call.
 
 ## Development
 

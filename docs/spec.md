@@ -170,20 +170,25 @@ shape doesn't depend on the type (implementation choice, 25/10/2026).
 ### `tmb doctor`
 
 ```json
-{"ok": false, "checks": [
+{"ok": false, "version": "0.1.0", "checks": [
   {"name": "credentials", "ok": true, "detail": "from file, mode 0600"},
-  {"name": "api", "ok": false, "detail": "TMB API rejected the credentials (HTTP 401).", "code": "auth_failed"},
-  {"name": "cache", "ok": true, "detail": "3 days old"}
+  {"name": "api", "ok": false, "detail": "TMB API rejected the credentials (HTTP 401).", "code": "auth_failed", "exit_code": 3},
+  {"name": "cache", "ok": true, "detail": "3 days old, TMB data of 2026-10-24"},
+  {"name": "favourites", "ok": true, "detail": "2 saved"}
 ]}
 ```
 
-One cheap authenticated request checks the keys. Exit code: the first failing check's (3 for
-credentials, 5/6 for the API), 0 when all pass.
+One small authenticated request (real time for stop 1103, validated like `tmb bus`) checks the
+keys and the response shape. The JSON goes to stdout even when a check fails; the exit code is the
+first failing check's (3 credentials, 5/6/7 API, 2 favourites file), 0 when all pass. A missing or
+old cache is not a failure. A credentials file readable by others is reported in `detail` but
+doesn't fail.
 
 ### `tmb skills get`
 
 Prints `SKILL.md` (shipped inside the package) to stdout as text: the one exception to "JSON on
-stdout", because it is documentation for agents. `SKILL.md` also lives at the repo root.
+stdout", because it is documentation for agents. The source is `src/tmb_cli/SKILL.md`; the repo
+root has a copy for people browsing GitHub, and a test fails if they differ.
 
 ## Attribution
 

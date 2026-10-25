@@ -43,6 +43,8 @@ uv run ruff check . && uv run ruff format .
 5. **Don't invent API fields.** Shape output only from fields seen in real responses; when unsure,
    ask Alex to run the command and paste (sanitized) output.
 6. Small, reviewable changes. Explain briefly what you changed and why: Alex owns the design.
+7. **Keep `SKILL.md` in step with the commands.** It is what agents read (`tmb skills get`). Edit
+   `src/tmb_cli/SKILL.md` and copy it to the repo root (a test checks they match).
 
 ## TMB API notes (verified 23/10/2026; response shapes in `docs/tmb-api.md`)
 - Free keys at developer.tmb.cat (create an application). Auth = `app_id` + `app_key` query params;
@@ -119,7 +121,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
 6. - [x] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
 7. - [x] Favourites with walking time: `tmb fav add casa 1103 --walk 4`, `tmb next casa` → per arrival
      `make_it: true/false` (answers "¿me da tiempo?")
-8. - [ ] Agents: `SKILL.md` + `tmb skills get` (the skill ships inside the package) [wallapop];
+8. - [x] Agents: `SKILL.md` + `tmb skills get` (the skill ships inside the package) [wallapop];
      `tmb doctor` (credentials, connectivity, cache age) [wallapop]; README "Using it from a coding
      agent" section [vodafone]
 9. - [ ] Release: TMB attribution in README (and in the output if the spec decides so); rate limits
