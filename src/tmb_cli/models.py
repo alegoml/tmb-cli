@@ -85,6 +85,7 @@ class WireStopProps(Wire):
     CODI_PARADA: int
     NOM_PARADA: str
     DESC_PARADA: str | None  # null on one stop in the 25/10/2026 capture
+    NOM_POBLACIO: str  # town: "Barcelona", "Montcada i Reixac", …
     DATA: str  # dataset date, "2026-10-24Z"
 
 
@@ -176,6 +177,7 @@ class BusStopResult(Output):
     code: str
     name: str
     description: str | None
+    town: str
 
 
 class StationResult(Output):

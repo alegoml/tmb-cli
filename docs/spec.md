@@ -104,7 +104,7 @@ sorting and `--line` as `bus`.
 {
   "query": "catalunya",
   "results": [
-    {"type": "bus", "code": "1103", "name": "Pl Catalunya - Portal de l'Àngel", "description": "…"},
+    {"type": "bus", "code": "1103", "name": "Pl Catalunya - Portal de l'Àngel", "description": "…", "town": "Barcelona"},
     {"type": "metro", "name": "Catalunya", "codes": {"L1": "126", "L3": "326"}}
   ],
   "source": "TMB",
@@ -118,8 +118,10 @@ with its per-line codes joined by `CODI_GRUP_ESTACIO` (D10). The cache keeps onl
 (~250 KB). Matching ignores case, accents and punctuation, and spells street types the way TMB
 abbreviates them (plaça → pl, avinguda → av, passeig → pg, carretera → ctra). Ranking: a stop
 code or an exact name, then name prefix, then every query word starting a word of the name, then
-substring of the name, then every query word in name + description; ties go metro first, then by
-name. (`transit/parades` seems to list
+substring of the name, then every query word in name + description. Ties: metro, then Barcelona
+bus stops, then other towns' (83% of stops are in Barcelona; Alex, 25/10/2026); then the earlier
+the query appears in the name; then the name. Bus results carry `town` (`NOM_POBLACIO`) so the
+agent can tell two "Av Catalunya" apart. (`transit/parades` seems to list
 active stops only; no "not in use" marker was seen.) `updated_at` is TMB's dataset date (`DATA`)
 of the cached network. Default `--limit 10`. The stops of a bus stop's lines aren't in
 `transit/parades`, so v1 doesn't list lines per bus stop.

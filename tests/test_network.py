@@ -61,6 +61,7 @@ def test_download_keeps_codes_and_names_and_joins_interchanges(net):
         "code": "2",
         "name": "Av Inventada - Rambla Fictícia",
         "description": None,
+        "town": "Ciutat de Prova",
     }
     assert [s.model_dump() for s in net.stations] == [
         {"name": "Prova", "codes": {"X8": "801", "X9": "901"}},
@@ -93,6 +94,11 @@ def test_cache_is_reused_while_fresh(net):
     assert FakeClient.requests == 4  # stops, lines, two lines' stations
 
 
+def test_cache_from_an_older_version_is_downloaded_again(net):
+    network.save(net.model_copy(update={"version": network.CACHE_VERSION - 1}))
+    assert network.load_cached() is None
+
+
 def test_stale_cache_is_downloaded_again(net):
     network.save(net.model_copy(update={"downloaded_at": time.time() - 8 * 24 * 3600}))
     FakeClient.requests = 0
@@ -118,19 +124,25 @@ def _found(results) -> list:
     return [getattr(r, "code", None) or r.codes for r in results]
 
 
-def test_search_ranks_exact_names_first_then_metro_then_bus(net):
-    assert _found(network.search(net, "prova")) == [{"X8": "801", "X9": "901"}, "1", "3"]
+def test_search_ranks_exact_names_first_then_metro_then_barcelona(net):
+    # 4 and 1 tie on rank; 4 is in Barcelona. 3 only matches in its description.
+    assert _found(network.search(net, "prova")) == [{"X8": "801", "X9": "901"}, "4", "1", "3"]
 
 
 def test_search_matches_word_prefixes_abbreviations_and_codes(net):
-    assert _found(network.search(net, "plaça prov")) == ["1"]
+    assert _found(network.search(net, "plaça prov")) == ["4", "1"]
     assert _found(network.search(net, "inventada ficticia")) == ["2"]
     assert _found(network.search(net, "2")) == ["2"]
     assert _found(network.search(net, "estacio inv")) == [{"X9": "902"}]
 
 
+def test_position_prefers_names_that_start_with_the_query():
+    assert network.position("catalunya", "Pl Catalunya - Portal de l'Àngel") == 1
+    assert network.position("catalunya", "La Rambla - Pl Catalunya") == 3
+
+
 def test_search_filters_and_limit(net):
-    assert _found(network.search(net, "prova", metro=False)) == ["1", "3"]
+    assert _found(network.search(net, "prova", metro=False)) == ["4", "1", "3"]
     assert _found(network.search(net, "prova", bus=False)) == [{"X8": "801", "X9": "901"}]
     assert len(network.search(net, "prova", limit=1)) == 1
 
@@ -149,9 +161,10 @@ def test_cli_stops(fake_api):
             {"type": "metro", "name": "Prova", "codes": {"X8": "801", "X9": "901"}},
             {
                 "type": "bus",
-                "code": "1",
-                "name": "Pl de Prova - Carrer Fals",
-                "description": "Pl. Prova/Fals",
+                "code": "4",
+                "name": "Pl de Prova - Carrer Inventat",
+                "description": "Pl. Prova/Inventat",
+                "town": "Barcelona",
             },
         ],
         "source": "TMB",

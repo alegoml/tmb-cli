@@ -26,13 +26,14 @@ from tmb_cli.models import (
 
 ENV_CACHE_DIR = "TMB_CLI_CACHE_DIR"  # override, mainly for tests
 MAX_AGE_SECONDS = 7 * 24 * 3600
-CACHE_VERSION = 1
+CACHE_VERSION = 2  # bump when the cached fields change: old caches are downloaded again
 
 
 class CachedStop(BaseModel):
     code: str
     name: str
     description: str | None
+    town: str
 
 
 class CachedStation(BaseModel):
@@ -116,6 +117,7 @@ def download(client: TmbClient) -> Network:
                 code=str(f.properties.CODI_PARADA),
                 name=f.properties.NOM_PARADA,
                 description=f.properties.DESC_PARADA,
+                town=f.properties.NOM_POBLACIO,
             )
             for f in stops.features
         ],
@@ -178,19 +180,32 @@ def rank(query: str, name: str, description: str | None = None) -> int | None:
     return None
 
 
+def position(query: str, name: str) -> int:
+    """Index of the first name word the query's first word starts: "catalunya" is word 1 of
+    "Pl Catalunya - Portal de l'Àngel" but word 3 of "La Rambla - Pl Catalunya"."""
+    first = query.split()[0]
+    words = normalize(name).split()
+    return next((i for i, word in enumerate(words) if word.startswith(first)), len(words))
+
+
 def search(
     network: Network, query: str, *, bus: bool = True, metro: bool = True, limit: int = 10
 ) -> list[BusStopResult | StationResult]:
     q = normalize(query)
-    found: list[tuple[int, int, str, BusStopResult | StationResult]] = []
+    found: list[tuple[int, int, int, str, BusStopResult | StationResult]] = []
     if metro:
         for station in network.stations:
             if (r := rank(q, station.name)) is not None:
-                found.append((r, 0, station.name, StationResult(**station.model_dump())))
+                where = position(q, station.name)
+                found.append((r, 0, where, station.name, StationResult(**station.model_dump())))
     if bus:
         for stop in network.stops:
             r = 0 if q == stop.code else rank(q, stop.name, stop.description)
             if r is not None:
-                found.append((r, 1, stop.name, BusStopResult(**stop.model_dump())))
-    found.sort(key=lambda item: item[:3])  # rank, then metro before bus, then name
+                group = 1 if stop.town == "Barcelona" else 2  # most TMB stops and users
+                where = position(q, stop.name)
+                found.append((r, group, where, stop.name, BusStopResult(**stop.model_dump())))
+    # Rank; then metro, Barcelona bus stops, other towns' bus stops; then where the query starts
+    # in the name; then the name.
+    found.sort(key=lambda item: item[:4])
     return [result for *_, result in found[:limit]]
