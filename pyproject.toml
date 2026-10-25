@@ -12,7 +12,9 @@ requires-python = ">=3.12"
 keywords = ["tmb", "barcelona", "bus", "metro", "cli", "agents"]
 dependencies = [
     "httpx>=0.28.1",
+    "pydantic>=2.14.1",
     "typer>=0.27.3",
+    "tzdata>=2026.5 ; sys_platform == 'win32'",
 ]
 
 [project.scripts]

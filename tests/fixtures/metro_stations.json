@@ -1,0 +1,75 @@
+{
+  "timestamp": 1767225600000,
+  "linies": [
+    {
+      "codi_linia": 9,
+      "nom_linia": "X9",
+      "nom_familia": "Metro",
+      "codi_familia": 1,
+      "color_linia": "000000",
+      "estacions": [
+        {
+          "codi_via": 1,
+          "id_sentit": 1,
+          "codi_estacio": 901,
+          "linies_trajectes": [
+            {
+              "codi_linia": 9,
+              "nom_linia": "X9",
+              "color_linia": "000000",
+              "codi_trajecte": "0091",
+              "desti_trajecte": "Destí de prova",
+              "propers_trens": [
+                {"codi_servei": "901", "temps_arribada": 1767225720000},
+                {"codi_servei": "902", "temps_arribada": 1767226080000}
+              ]
+            }
+          ]
+        },
+        {
+          "codi_via": 2,
+          "id_sentit": 2,
+          "codi_estacio": 901,
+          "linies_trajectes": [
+            {
+              "codi_linia": 9,
+              "nom_linia": "X9",
+              "color_linia": "000000",
+              "codi_trajecte": "0092",
+              "desti_trajecte": "Altre destí",
+              "propers_trens": [
+                {"codi_servei": "903", "temps_arribada": 1767225660000}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codi_linia": 8,
+      "nom_linia": "X8",
+      "nom_familia": "Metro",
+      "codi_familia": 1,
+      "color_linia": "FFFFFF",
+      "estacions": [
+        {
+          "codi_via": 1,
+          "id_sentit": 1,
+          "codi_estacio": 801,
+          "linies_trajectes": [
+            {
+              "codi_linia": 8,
+              "nom_linia": "X8",
+              "color_linia": "FFFFFF",
+              "codi_trajecte": "0081",
+              "desti_trajecte": "Final de prova",
+              "propers_trens": [
+                {"codi_servei": "801", "temps_arribada": 1767225840000}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

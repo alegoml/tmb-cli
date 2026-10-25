@@ -88,8 +88,7 @@ class TmbClient:
             ) from None
 
     # --- real-time arrivals -------------------------------------------------
-    # The output is the raw API payload for now. Shape it into our own stable
-    # JSON once we have looked at real responses (see AGENTS.md roadmap).
+    # Raw payloads; `arrivals.py` validates them and shapes our output.
 
     def bus_arrivals(self, stop_code: str) -> dict:
         return self.get(f"itransit/bus/parades/{stop_code}")

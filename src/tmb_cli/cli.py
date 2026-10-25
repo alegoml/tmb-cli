@@ -6,7 +6,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from tmb_cli import __version__
+from tmb_cli import __version__, arrivals
 from tmb_cli.client import TmbClient
 from tmb_cli.config import (
     ENV_APP_ID,
@@ -88,6 +88,19 @@ def _client() -> TmbClient:
     return TmbClient(creds.app_id, creds.app_key)
 
 
+def _check_codes(kind: str, codes: list[str]) -> None:
+    """Codes are numbers; checking keeps anything else out of the request path."""
+    for code in codes:
+        if not code.isascii() or not code.isdigit():
+            raise UsageError(f"{kind} codes are numbers; got `{code}`.")
+
+
+LineOption = Annotated[
+    list[str] | None,
+    typer.Option("--line", "-l", help="Only this line (case-insensitive). Repeatable."),
+]
+
+
 # --- auth ---------------------------------------------------------------------
 
 
@@ -138,25 +151,34 @@ def auth_status() -> None:
 @app.command()
 def bus(
     stop: Annotated[str, typer.Argument(help="Bus stop code, e.g. 1103.")],
+    line: LineOption = None,
 ) -> None:
-    """Real-time arrivals at a bus stop (raw TMB payload for now)."""
+    """Next buses at a stop, soonest first."""
 
     def action() -> object:
+        _check_codes("Stop", [stop])
         with _client() as client:
-            return client.bus_arrivals(stop)
+            payload = client.bus_arrivals(stop)
+        return arrivals.bus_arrivals(payload, stop, line or []).model_dump()
 
     _run(action)
 
 
 @app.command()
 def metro(
-    stations: Annotated[list[str], typer.Argument(help="One or more metro station codes.")],
+    stations: Annotated[
+        list[str],
+        typer.Argument(help="Station codes, one per line: Catalunya is 126 (L1), 326 (L3)."),
+    ],
+    line: LineOption = None,
 ) -> None:
-    """Real-time arrivals at metro stations (raw TMB payload for now)."""
+    """Next trains at metro stations, soonest first per station."""
 
     def action() -> object:
+        _check_codes("Station", stations)
         with _client() as client:
-            return client.metro_arrivals(stations)
+            payload = client.metro_arrivals(stations)
+        return arrivals.metro_arrivals(payload, stations, line or []).model_dump()
 
     _run(action)
 

@@ -35,9 +35,25 @@ Environment variables `TMB_APP_ID` and `TMB_APP_KEY` take precedence over the fi
 
 ```bash
 tmb bus 1103             # next buses at stop 1103 (Pl Catalunya)
+tmb bus 1103 --line V15  # only the V15 (case-insensitive, repeatable)
 tmb metro 126 326        # next trains at Catalunya, L1 and L3 (codes are per line)
-tmb bus 1103 | jq .
 ```
+
+```json
+{
+  "stop": {"code": "1103", "name": "Pl Catalunya - Portal de l'Àngel"},
+  "arrivals": [
+    {"line": "V15", "destination": "Barceloneta", "minutes": 5, "eta": "2026-10-25T09:48:39+01:00"},
+    {"line": "H16", "destination": "Fòrum Campus Besòs", "minutes": 7, "eta": "2026-10-25T09:50:05+01:00"}
+  ],
+  "source": "TMB",
+  "updated_at": "2026-10-25T09:42:54+01:00"
+}
+```
+
+`minutes` is rounded down (3 min 50 s shows 3) and `eta` is Barcelona time. `metro` returns
+`stations`, each with its `arrivals` (plus `track`); station names come in a later version. Data:
+TMB, as of `updated_at`.
 
 Errors are printed to stderr as one line of JSON, with stable exit codes:
 

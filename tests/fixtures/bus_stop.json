@@ -1,0 +1,37 @@
+{
+  "timestamp": 1767225600000,
+  "parades": [
+    {
+      "codi_parada": "0001",
+      "nom_parada": "Parada de prova",
+      "linies_trajectes": [
+        {
+          "id_operador": 2,
+          "transit_namespace": "bus",
+          "codi_linia": 901,
+          "nom_linia": "X1",
+          "id_sentit": 1,
+          "codi_trajecte": "9010",
+          "desti_trajecte": "Destí de prova",
+          "propers_busos": [
+            {"temps_arribada": 1767225830000, "id_bus": 1, "info_bus": {"accessibilitat": {"estat_rampa": "SENSE_INCIDENCIA"}}},
+            {"temps_arribada": 1767226500000, "id_bus": 2, "info_bus": {"accessibilitat": {"estat_rampa": "SENSE_INCIDENCIA"}}}
+          ]
+        },
+        {
+          "id_operador": 2,
+          "transit_namespace": "bus",
+          "codi_linia": 902,
+          "nom_linia": "X2",
+          "id_sentit": 2,
+          "codi_trajecte": "9021",
+          "desti_trajecte": "Altre destí",
+          "propers_busos": [
+            {"temps_arribada": 1767225900000, "id_bus": 3, "info_bus": {"accessibilitat": {"estat_rampa": "SENSE_INCIDENCIA"}}},
+            {"temps_arribada": 1767225590000, "id_bus": 4, "info_bus": {"accessibilitat": {"estat_rampa": "SENSE_INCIDENCIA"}}}
+          ]
+        }
+      ]
+    }
+  ]
+}

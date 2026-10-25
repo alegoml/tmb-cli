@@ -57,8 +57,9 @@ the README (exit codes 0–7, 130).
 
 (Values made up.) Mapping: `line` ← `nom_linia`, `destination` ← `desti_trajecte`,
 `eta` ← `temps_arribada`, `updated_at` ← `timestamp`, both in Europe/Madrid time.
-`minutes` = whole minutes between `timestamp` and `temps_arribada` (D1). `arrivals` is one flat
-list sorted by `eta` (D2). No buses → `"arrivals": []`, exit 0. `--line` is case-insensitive and
+`minutes` = whole minutes between `timestamp` and `temps_arribada` (D1), 0 for a bus already due
+(`temps_arribada` before `timestamp`). `arrivals` is one flat list sorted by arrival time, then
+line (D2). Stop and station codes must be digits, else `usage` (exit 2) before any request. No buses → `"arrivals": []`, exit 0. `--line` is case-insensitive and
 repeatable. Unknown stop: the API answers 200 with `parades: []` (captured). If a real stop with no
 buses answers the same (night capture pending), `not_found` (exit 4) comes from checking the code
 against the stops cache; without a cache, `parades: []` gives `"stop": {"code": …, "name": null}`

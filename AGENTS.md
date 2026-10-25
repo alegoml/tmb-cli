@@ -12,8 +12,9 @@ coding agents can answer things like "¿me da tiempo a pillar el V15?". Inspired
 ## Stack and layout
 - Python 3.12+, uv, Typer (CLI), httpx (HTTP), pytest, ruff.
 - `src/tmb_cli/cli.py` commands · `client.py` TMB API client · `config.py` credentials ·
-  `errors.py` typed errors + exit codes · `output.py` JSON to stdout/stderr.
-- `tests/` offline tests only.
+  `errors.py` typed errors + exit codes · `output.py` JSON to stdout/stderr ·
+  `models.py` `Wire*` (TMB responses) and output models · `arrivals.py` TMB → our output.
+- `tests/` offline tests only; synthetic responses in `tests/fixtures/`.
 
 ## Commands
 ```bash
@@ -112,7 +113,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
 4. - [x] `docs/tmb-api.md`: response shapes from the public swagger (to confirm with captures)
    - [x] `docs/spec.md` draft: v1 commands, JSON shapes, user stories, decisions D1–D9 [wallapop]
    - [x] Alex picked D1–D10 (all as recommended, 25/10/2026); spec updated with the captures
-5. - [ ] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
+5. - [x] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
      and output models (our stable contract) [vodafone]; compact `bus`/`metro`; `--line` filter
 6. - [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
 7. - [ ] Favourites with walking time: `tmb fav add casa 1103 --walk 4`, `tmb next casa` → per arrival
