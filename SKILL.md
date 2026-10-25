@@ -6,7 +6,8 @@ description: Real-time TMB (Barcelona) bus and metro arrivals with the `tmb` CLI
 # tmb: Barcelona bus and metro arrivals
 
 `tmb` answers from TMB's official API. Every command prints JSON on stdout; errors are one line of
-JSON on stderr with a stable exit code. Always pass `--no-input`, so it never waits for a prompt.
+JSON on stderr with a stable exit code. Always pass `--no-input` (before or after the command), so
+it never waits for a prompt.
 
 ## Which command
 

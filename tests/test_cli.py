@@ -116,3 +116,25 @@ def test_corrupt_credentials_file_is_a_json_error(isolated_config):
     assert result.exit_code == 3
     assert json.loads(result.stderr)["error"]["code"] == "missing_credentials"
     assert "leaky-key" not in result.output
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        (["bus", "1103", "--no-input"], ["--no-input", "bus", "1103"]),
+        (["--no-input", "bus", "1103"], ["--no-input", "bus", "1103"]),
+        (["fav", "add", "casa", "1", "--no-input", "--walk", "4"],
+         ["--no-input", "fav", "add", "casa", "1", "--walk", "4"]),
+        (["stops", "--", "--no-input"], ["stops", "--", "--no-input"]),
+        (["bus", "1103"], ["bus", "1103"]),
+    ],
+)  # fmt: skip
+def test_global_flags_work_anywhere(args, expected):
+    assert cli.hoist_global_flags(args) == expected
+
+
+def test_no_input_after_the_command_reaches_the_command(isolated_config):
+    args = cli.hoist_global_flags(["auth", "set", "--no-input"])
+    result = runner.invoke(app, args, input="id\nkey\n")
+    assert result.exit_code == 2
+    assert json.loads(result.stderr)["error"]["code"] == "usage"

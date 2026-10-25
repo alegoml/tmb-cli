@@ -105,8 +105,8 @@ retrying won't help until something changes.
 Argument errors caught by the parser itself (a missing stop code, an unknown option) are still
 printed as plain text, with exit code 2.
 
-Scripts and agents should pass `--no-input` (or set `TMB_NO_INPUT=1`) so the CLI never waits for a
-prompt.
+Scripts and agents should pass `--no-input` (anywhere: `tmb --no-input bus 1103` and
+`tmb bus 1103 --no-input` both work) or set `TMB_NO_INPUT=1`, so the CLI never waits for a prompt.
 
 ## Using it from a coding agent
 

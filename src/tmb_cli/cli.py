@@ -430,5 +430,17 @@ def doctor() -> None:
         raise typer.Exit(exit_code)
 
 
+GLOBAL_FLAGS = ("--no-input",)
+
+
+def hoist_global_flags(args: list[str]) -> list[str]:
+    """Move global flags to the front, so `tmb bus 1103 --no-input` works like
+    `tmb --no-input bus 1103` (agents put flags at the end). Nothing after `--` is touched."""
+    end = args.index("--") if "--" in args else len(args)
+    found = [flag for flag in GLOBAL_FLAGS if flag in args[:end]]
+    rest = [arg for arg in args[:end] if arg not in GLOBAL_FLAGS]
+    return [*found, *rest, *args[end:]]
+
+
 def main() -> None:
-    app()
+    app(args=hoist_global_flags(sys.argv[1:]))
