@@ -1,7 +1,7 @@
 # tmb-cli v1 spec
 
-**Status: DRAFT, for Alex to review.** Based on the swagger (`docs/tmb-api.md`), not yet on real
-captures. Open decisions are marked **D1…D9**, each with a recommendation; nothing below them gets
+**Status: DRAFT, for Alex to review.** Based on the swagger and the captures of 25/10/2026
+(`docs/tmb-api.md`). Open decisions are marked **D1…D9**, each with a recommendation; nothing below them gets
 built until Alex picks. Vocabulary: AGENTS.md "Language".
 
 ## Problem
@@ -59,7 +59,10 @@ the README (exit codes 0–7, 130).
 `eta` ← `temps_arribada`, `updated_at` ← `timestamp`, both in Europe/Madrid time.
 `minutes` = whole minutes between `timestamp` and `temps_arribada` (D1). `arrivals` is one flat
 list sorted by `eta` (D2). No buses → `"arrivals": []`, exit 0. `--line` is case-insensitive and
-repeatable. Unknown stop → `not_found` (exit 4) if the capture shows a way to tell it apart.
+repeatable. Unknown stop: the API answers 200 with `parades: []` (captured). If a real stop with no
+buses answers the same (night capture pending), `not_found` (exit 4) comes from checking the code
+against the stops cache; without a cache, `parades: []` gives `"stop": {"code": …, "name": null}`
+and empty arrivals.
 
 - **D1. Minutes: floor or round?** iBus is precise to the minute. *Recommend floor*: 3 min 50 s
   shows 3, so we never promise more time than there is.
@@ -68,13 +71,13 @@ repeatable. Unknown stop → `not_found` (exit 4) if the capture shows a way to 
 - **D3. Extra fields?** `id_bus`, `id_sentit`, `transit_namespace` (TMB vs other AMB operator).
   *Recommend leaving them out of v1* (tokens); `bus_id` can come back for phase 2.
 
-### `tmb metro 120`
+### `tmb metro 126`
 
 ```json
 {
   "stations": [
     {
-      "code": "120",
+      "code": "126",
       "name": "Catalunya",
       "arrivals": [
         {"line": "L1", "destination": "Fondo", "track": 1, "minutes": 2, "eta": "2026-10-24T18:05:00+02:00"}
@@ -86,8 +89,8 @@ repeatable. Unknown stop → `not_found` (exit 4) if the capture shows a way to 
 }
 ```
 
-(Values made up; the code ↔ name pairing isn't confirmed yet.) The API groups by line; we
-regroup by station. The real-time response has **no station name**:
+(Values made up, except that 126 is Catalunya on L1: real-time codes are per line, from
+`transit/linies/metro/{line}/estacions`.) The API groups by line; we regroup by station. The real-time response has **no station name**:
 `name` comes from the stops cache, `null` if there's no cache yet. Same rules for `minutes`,
 sorting and `--line` as `bus`.
 
@@ -98,7 +101,7 @@ sorting and `--line` as `bus`.
   "query": "catalunya",
   "results": [
     {"type": "bus", "code": "1103", "name": "Pl Catalunya - Portal de l'Àngel", "description": "…"},
-    {"type": "metro", "code": "120", "name": "Catalunya", "line": "L1"}
+    {"type": "metro", "code": "126", "name": "Catalunya", "line": "L1"}
   ],
   "source": "TMB",
   "updated_at": "2026-10-20T09:00:00+02:00"
@@ -106,9 +109,10 @@ sorting and `--line` as `bus`.
 ```
 
 (Values made up.) Searches a local cache of `transit/parades` plus the metro stations of each line (one result per
-line, because real-time codes are per line). Matching ignores case and accents, over name and
-description; exact > prefix > substring; stops marked "not in use" are left out. `updated_at` is
-when the cache was downloaded. Default `--limit 10`. The stops of a bus stop's lines aren't in
+line, because real-time codes are per line: 11 calls, one per metro line). Matching ignores case
+and accents, over name and description; exact > prefix > substring. (`transit/parades` seems to list
+active stops only; no "not in use" marker was seen.) `updated_at` is TMB's dataset date (`DATA`)
+of the cached network. Default `--limit 10`. The stops of a bus stop's lines aren't in
 `transit/parades`, so v1 doesn't list lines per bus stop.
 
 - **D4. Cache refresh?** *Recommend*: download on first use, refresh automatically when older than
@@ -136,7 +140,7 @@ sharing one never leaks the other. Names: lowercase letters, digits and `-`.
 free). `make_it` = `leave_in >= margin` (D6). `tmb next 1103 --walk 4` works without a favourite.
 
 - **D5. Bus or metro in `fav add`?** *Recommend* bus by default, `--metro` for stations: short and
-  explicit. (Alternative: `bus:1103` / `metro:120` prefixes.)
+  explicit. (Alternative: `bus:1103` / `metro:126` prefixes.)
 - **D6. Safety margin for `make_it`?** *Recommend* 0 by default, `--margin MIN` to add one. The walk
   time the user gives is already their own estimate.
 
@@ -161,7 +165,7 @@ stdout", because it is documentation for agents. `SKILL.md` also lives at the re
 ## Attribution
 
 TMB's terms require citing the source and the date of last update. Every data command adds
-`"source": "TMB"` and `"updated_at"` (real time: TMB's `timestamp`; `stops`: cache download time).
+`"source": "TMB"` and `"updated_at"` (real time: TMB's `timestamp`; `stops`: the dataset's `DATA`).
 README and SKILL.md credit TMB too.
 
 - **D7. Attribution in every output?** It costs ~15 tokens per call. *Recommend yes*: it's what the

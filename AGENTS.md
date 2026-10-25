@@ -56,7 +56,13 @@ From the portal's public swagger (read 24/10/2026; not yet confirmed by a captur
   `transit/linies/metro/{line}/estacions`. Static GTFS: `static/datasets/gtfs.zip`.
 - Legacy iBus (`stops/{code}`, `lines/{line}/stops/{code}`) is deprecated: don't use it.
 - No service-alerts endpoint; only an `alerts` field inside `planner/plan` responses.
-- Rate limits: not stated in the swagger or the terms. Alex to check his app's page in the portal.
+- Rate limits: not stated in the swagger, the terms or the app's page in the portal (checked
+  25/10/2026). No automatic retries; 429 → `rate_limited`.
+
+Confirmed by captures (25/10/2026, details in `docs/tmb-api.md`): bad keys → 401 (not 403); an
+unknown bus stop → 200 with `parades: []` (not 404); `codi_linia` is an int; the real-time metro
+`codi_estacio` is `CODI_ESTACIO` of `transit/linies/metro/{line}/estacions` (120 = Plaça de Sants
+on L1, Catalunya is 126); undocumented `info_bus.accessibilitat.estat_rampa` on each bus.
 
 Terms (developer.tmb.cat/docs/terms-conditions, read 24/10/2026): free, non-exclusive, worldwide,
 indefinite licence to reproduce, distribute and make derived works of the GTFS and API data. We
@@ -99,8 +105,10 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
    - [x] CI: ruff + pytest on GitHub Actions (runs once the repo is on GitHub)
 3. - [x] Tooling: opt-in live tests (`TMB_LIVE=1`) and `scripts/capture.py` writing to `captures/`
      [vodafone]
-   - [ ] Alex runs the captures (bus stop, metro station, `transit/linies/bus`); synthetic
-     fixtures with the same shape go in `tests/fixtures/`
+   - [x] Alex ran the first captures (25/10/2026): bus stop, unknown stop, metro station, static
+     network
+   - [ ] Pending captures: L3 stations + Catalunya real time (interchange codes), a stop with no
+     buses (night); synthetic fixtures updated to the confirmed shape in `tests/fixtures/`
 4. - [x] `docs/tmb-api.md`: response shapes from the public swagger (to confirm with captures)
    - [x] `docs/spec.md` draft: v1 commands, JSON shapes, user stories, decisions D1–D9 [wallapop]
    - [ ] Alex picks D1–D9; spec updated after the captures. No new commands before that
