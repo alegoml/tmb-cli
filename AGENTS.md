@@ -124,12 +124,13 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
 8. - [x] Agents: `SKILL.md` + `tmb skills get` (the skill ships inside the package) [wallapop];
      `tmb doctor` (credentials, connectivity, cache age) [wallapop]; README "Using it from a coding
      agent" section [vodafone]
-9. - [ ] Release: TMB attribution in README (and in the output if the spec decides so); rate limits
-     from Alex's portal page;
-     `source-exclude` for secrets in the build, pinned `uv tool install …@vX.Y.Z` + `install.sh`,
-     a packaging test that pins agree, `RELEASING.md` [vodafone]; README demo (3-step key signup),
-     15 s human-vs-agent video → go public + post
-   - [ ] `--format pretty` for humans (low priority: the official app beats us for humans)
+9. - [x] Release prep: TMB attribution in README and in every output (D7); rate limits (none
+     published); `source-exclude`/`wheel-exclude` for secrets, pinned
+     `uv tool install git+…@vX.Y.Z` + `install.sh`, a packaging test (pins agree, no secrets
+     shipped), `RELEASING.md` [vodafone]. Distribution: GitHub tags only, no PyPI (Alex, 25/10/2026)
+   - [ ] Go public: create `alegoml/tmb-cli` on GitHub, push, tag `v0.1.0`, GitHub release
+   - [ ] README demo (3-step key signup) + 15 s human-vs-agent video → post
+   - [-] `--format pretty` for humans: not in v1 (D9)
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
 Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API

@@ -13,13 +13,24 @@ metro arrivals from your terminal. Output is JSON, so shell pipelines (`jq`) and
 - A free TMB API key: sign in at [developer.tmb.cat](https://developer.tmb.cat/), create an
   application and copy its `app_id` and `app_key`.
 
-## Install (from source)
+## Install
 
 ```bash
-git clone <repo-url> tmb-cli && cd tmb-cli
+uv tool install git+https://github.com/alegoml/tmb-cli@v0.1.0
+```
+
+Or with the script, which does the same after checking that uv is there (read it first):
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/alegoml/tmb-cli/main/install.sh | sh
+```
+
+From a clone, for development:
+
+```bash
+git clone https://github.com/alegoml/tmb-cli && cd tmb-cli
 uv sync
 uv run tmb --help
-uv tool install --editable .   # optional: put `tmb` on your PATH
 ```
 
 ## Credentials
@@ -126,6 +137,20 @@ uv run ruff check . && uv run ruff format --check .
 ```
 
 Tests never call the real API (they use `httpx.MockTransport`).
+
+## Data and attribution
+
+Data: **Transports Metropolitans de Barcelona (TMB)**, from its open developer API
+([developer.tmb.cat](https://developer.tmb.cat/)), under TMB's
+[terms of use](https://developer.tmb.cat/docs/terms-conditions). The terms ask to cite TMB as the
+source together with the date of the last update, and not to alter the data. `tmb` does that in
+every response: `"source": "TMB"` and `updated_at` (TMB's own timestamp for real time, the
+dataset date for the stops list). `minutes`, `leave_in` and `make_it` are computed from TMB's
+times; names, lines and destinations are passed through as TMB publishes them.
+
+Each user gets their own key and accepts TMB's terms. Register the application as `tmb-cli`. TMB
+may change the API or its terms without notice; if a response stops matching, `tmb` fails with
+`api_changed` (exit 7) instead of guessing.
 
 ## Disclaimer
 
