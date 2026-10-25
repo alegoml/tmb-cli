@@ -5,8 +5,9 @@ The maintainer is Alex (@alegoml). **Talk to him in Spanish**; code, comments, c
 stay in English.
 
 ## What this is
-An unofficial, JSON-first CLI for TMB (Barcelona) real-time bus and metro arrivals, built so that
-coding agents can answer things like "¿me da tiempo a pillar el V15?". Inspired by
+An unofficial, JSON-first CLI for TMB (Barcelona) real-time bus and metro arrivals, plus the
+metropolitan buses of AMB's other operators (TUSGSAL, Moventis, …), built so that coding agents can
+answer things like "¿me da tiempo a pillar el V15?". Inspired by
 `Microck/wallapop-cli` and `luisgonzaleznf/vodafone-cli`. Public on GitHub since 25/10/2026 (`alegoml/tmb-cli`).
 
 ## Stack and layout
@@ -38,8 +39,11 @@ uv run ruff check . && uv run ruff format .
    `tests/fixtures/` holds **synthetic** responses: the same structure and field names as a real
    capture, but made-up values (lines like `X1`, stops like `0001`, names like "Destí de prova").
    No real TMB data and no stop that hints where Alex lives: the repo will be public.
-4. **Read-only.** Only GET endpoints of the official API at `https://api.tmb.cat/v1/`. Don't use
-   third-party backends (e.g. andana.bcn.am) or scrape tmb.cat.
+4. **Read-only, official open data only.** GET endpoints of TMB's API at `https://api.tmb.cat/v1/`
+   and AMB's published open data at `https://www.ambmobilitat.cat/` (the GTFS zip and the
+   GTFS-Realtime feed listed in AMB's open data catalogue; see `docs/amb-api.md`). Don't use
+   third-party backends (e.g. andana.bcn.am), AMB's app endpoints, or scrape tmb.cat/amb.cat.
+   (Widened to AMB by Alex, 25/10/2026.)
 5. **Don't invent API fields.** Shape output only from fields seen in real responses; when unsure,
    ask Alex to run the command and paste (sanitized) output.
 6. Small, reviewable changes. Explain briefly what you changed and why: Alex owns the design.
@@ -68,6 +72,14 @@ unknown bus stop → 200 with `parades: []` (not 404); `codi_linia` is an int; t
 `codi_estacio` is `CODI_ESTACIO` of `transit/linies/metro/{line}/estacions` (120 = Plaça de Sants
 on L1; Catalunya is 126 on L1 and 326 on L3, one code per line, joined by `CODI_GRUP_ESTACIO`);
 undocumented `info_bus.accessibilitat.estat_rampa` on each bus.
+
+## AMB open data notes (checked 25/10/2026; details in `docs/amb-api.md`)
+- No keys. Real time: GTFS-Realtime protobuf at `transit/trips-updates/trips.bin`, whole network
+  (~280 KB, every 30 s), absolute `arrival.time` per stop. Static: GTFS zip
+  `OpenData/google_transit.zip` (8.8 MB; we read only `stops`, `routes`, `trips`, `agency`,
+  `areas`, `stop_areas`; never `stop_times`), republished every few days with new trip ids.
+- Stop codes are shared with TMB (`stop_code` = TMB code; `stop_id` zero-padded to 6 digits).
+- Terms: Llei 37/2007 authorisation: cite AMB, don't alter the data, state the last update date.
 
 Terms (developer.tmb.cat/docs/terms-conditions, read 24/10/2026): free, non-exclusive, worldwide,
 indefinite licence to reproduce, distribute and make derived works of the GTFS and API data. We
@@ -132,6 +144,9 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
      from GitHub, with Claude Code and with his phone agent; tag `v0.1.0` + GitHub release
    - [ ] README demo (3-step key signup) + 15 s human-vs-agent video → post
    - [-] `--format pretty` for humans: not in v1 (D9)
+10. - [x] AMB docs: `docs/amb-api.md`, rule 4 widened, spec section "AMB" (D11–D13)
+    - [ ] AMB in code: GTFS-RT + static cache, `tmb bus` merges TMB and AMB with `operator`,
+      `stops` lists AMB-only stops, `doctor`, SKILL.md/README; then announce (video, post)
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
 Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API

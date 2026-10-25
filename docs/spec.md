@@ -191,11 +191,80 @@ Prints `SKILL.md` (shipped inside the package) to stdout as text: the one except
 stdout", because it is documentation for agents. The source is `src/tmb_cli/SKILL.md`; the repo
 root has a copy for people browsing GitHub, and a test fails if they differ.
 
+## AMB: the other metropolitan buses (added 25/10/2026)
+
+AMB publishes real time for the metropolitan buses that aren't TMB's (TUSGSAL, Moventis, Monbus,
+Avanza, Aerobús…) as open data, without keys (`docs/amb-api.md`). Stop codes are shared with TMB,
+so there is no new command: `bus`, `stops`, `fav` and `next` cover both networks.
+
+- **D11. One `tmb bus` for both, or a separate `tmb amb`?** **Decided (Alex, 25/10/2026)**: one
+  command. The user and the agent shouldn't need to know who runs a stop.
+
+### `tmb bus <code>` with AMB
+
+```json
+{
+  "stop": {"code": "0001", "name": "Parada de prova"},
+  "arrivals": [
+    {"line": "X1", "destination": "Destí de prova", "minutes": 3, "eta": "…", "operator": "TMB"},
+    {"line": "Y7", "destination": "Altre destí", "minutes": 5, "eta": "…", "operator": "Operador de prova"}
+  ],
+  "source": "TMB+AMB",
+  "updated_at": "…"
+}
+```
+
+(Values made up.) Every arrival gets `operator`: `"TMB"` for TMB's data, AMB's `agency_name`
+as published ("DIREXIS TUSGSAL", "Moventis"…) for AMB's. Which sources a call asks:
+
+- **AMB** when the AMB stop list (cached, see below) has the code. Its line names and
+  destinations come from that cache (`trip_id` → `routes`/`trips`).
+- **TMB** when the code isn't AMB-only (in AMB's list without a TMB-padded counterpart in TMB's
+  list) and keys are set. An AMB-only stop needs no keys; any other stop without keys is still
+  `missing_credentials`.
+- Both answers are merged into one list sorted by time (D2). If TMB's answer lists other
+  operators' lines (`transit_namespace: "amb"`) and AMB answered too, those TMB entries are dropped
+  so a bus never appears twice; AMB's own feed is the reference for its buses.
+- `stop.name`: TMB's `nom_parada`, else AMB's `stop_name`. `not_found` when neither TMB nor
+  either cached stop list knows the code.
+- `minutes`: from each source's own query time (TMB's `timestamp`, AMB's `header.timestamp`).
+
+- **D12. `source` and `updated_at` with two sources?** **Decided (implementation choice, for Alex
+  to review)**: `source` stays a string, `"TMB"`, `"AMB"` or `"TMB+AMB"`, and `updated_at` is the
+  **older** of the two times, so it never claims fresher data than there is. Keeps the shape of
+  every v0.1 output.
+
+### AMB cache
+
+`$XDG_CACHE_HOME/tmb-cli/amb.json`, separate from TMB's `network.json` because it expires on its
+own schedule: AMB republishes its GTFS every few days with new trip ids. It keeps stops (code, name,
+town, in service), lines (`route_id` → name, operator) and trips (`trip_id` → line, headsign).
+Refreshed when the feed's `feed_end_date` has passed, when older than 7 days, or once per command
+when the real-time feed names a trip at the asked stop that the cache doesn't know.
+
+- **D13. Can `tmb bus` download the AMB cache?** **Decided (implementation choice, for Alex to
+  review)**: yes, unlike TMB's network cache. Without it AMB arrivals have no line or destination
+  (the real-time feed only has trip ids). The first `bus` call, and one every few days, downloads
+  8.8 MB; `tmb stops --refresh` refreshes both caches.
+
+### `tmb stops` with AMB
+
+AMB-only stops (not out of service) join the results with `"network": "AMB"`; TMB stops get
+`"network": "TMB"`. A shared stop appears once, as TMB's. AMB's `stop_desc` is the stop's kind
+("Pal"), so AMB results have `"description": null`; `town` comes from AMB's areas and can be
+`null`. `updated_at` is the older of the two datasets' dates.
+
+### `fav`, `next`, `doctor`
+
+`fav add` accepts AMB codes (checked against the AMB cache when present). `next` works unchanged
+through `bus`. `doctor` adds an `amb` check (the real-time feed answers and parses) and reports
+the AMB cache's age.
+
 ## Attribution
 
-TMB's terms require citing the source and the date of last update. Every data command adds
-`"source": "TMB"` and `"updated_at"` (real time: TMB's `timestamp`; `stops`: the dataset's `DATA`).
-README and SKILL.md credit TMB too.
+TMB's and AMB's terms require citing the source and the date of last update. Every data command
+adds `"source"` (`"TMB"`, `"AMB"` or `"TMB+AMB"`) and `"updated_at"` (real time: the source's own
+time, the older one when there are two; `stops`: the dataset dates). README and SKILL.md credit both.
 
 - **D7. Attribution in every output?** It costs ~15 tokens per call. **Decided: yes**: it's what the
   terms literally ask for, and `updated_at` is useful anyway (the agent knows how fresh data is).
