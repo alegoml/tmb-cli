@@ -111,7 +111,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
    - [ ] Pending capture: a stop with no buses (night); synthetic fixtures updated to the confirmed shape in `tests/fixtures/`
 4. - [x] `docs/tmb-api.md`: response shapes from the public swagger (to confirm with captures)
    - [x] `docs/spec.md` draft: v1 commands, JSON shapes, user stories, decisions D1–D9 [wallapop]
-   - [ ] Alex picks D1–D9; spec updated after the captures. No new commands before that
+   - [ ] Alex picks D1–D10; spec updated after the captures. No new commands before that
 5. - [ ] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
      and output models (our stable contract) [vodafone]; compact `bus`/`metro`; `--line` filter
 6. - [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)

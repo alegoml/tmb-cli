@@ -1,7 +1,7 @@
 # tmb-cli v1 spec
 
 **Status: DRAFT, for Alex to review.** Based on the swagger and the captures of 25/10/2026
-(`docs/tmb-api.md`). Open decisions are marked **D1…D9**, each with a recommendation; nothing below them gets
+(`docs/tmb-api.md`). Open decisions are marked **D1…D10**, each with a recommendation; nothing below them gets
 built until Alex picks. Vocabulary: AGENTS.md "Language".
 
 ## Problem
