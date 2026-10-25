@@ -38,6 +38,8 @@ tmb bus 1103             # next buses at stop 1103 (Pl Catalunya)
 tmb bus 1103 --line V15  # only the V15 (case-insensitive, repeatable)
 tmb metro 126 326        # next trains at Catalunya, L1 and L3 (codes are per line)
 tmb stops catalunya      # find stop and station codes by name
+tmb fav add casa 1103 --walk 4   # save a stop with your walk time to it
+tmb next casa            # next buses + whether you make it: "¿me da tiempo?"
 ```
 
 ```json
@@ -60,6 +62,11 @@ cached. Data: TMB, as of `updated_at`.
 station lists one code per line (`"codes": {"L1": "126", "L3": "326"}`): pass them all to
 `tmb metro`. The first run downloads the static network (13 requests) to
 `~/.cache/tmb-cli/network.json`; it refreshes weekly, or now with `--refresh`.
+
+`tmb next casa` adds to each arrival `leave_in` (minutes until you must set off: `minutes` minus
+your walk time) and `make_it` (`leave_in` ≥ `--margin`, 0 by default). Favourites live only on your
+machine, in `~/.config/tmb-cli/favourites.json`. A metro favourite can hold every line of an
+interchange: `tmb fav add feina 126 326 --metro --walk 5`.
 
 Errors are printed to stderr as one line of JSON, with stable exit codes:
 

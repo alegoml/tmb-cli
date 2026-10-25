@@ -191,3 +191,49 @@ class StopSearch(Output):
     results: list[BusStopResult | StationResult]
     source: str = "TMB"
     updated_at: str  # TMB's dataset date of the cached network
+
+
+# --- `tmb next`: arrivals plus whether the user can catch them ----------------------
+
+
+class Timing(Output):
+    make_it: bool  # leave_in >= margin
+    leave_in: int  # minutes until the user must set off: minutes - walk_minutes (can be negative)
+
+
+class NextArrival(Timing, Arrival):
+    pass
+
+
+class NextMetroArrival(Timing, MetroArrival):
+    pass
+
+
+class Target(Output):
+    """What `tmb next` looked at: a favourite (`name`) or codes given directly (`name` null)."""
+
+    name: str | None
+    type: str
+    codes: list[str]
+    walk_minutes: int
+
+
+class BusNext(Output):
+    favourite: Target
+    stop: Stop
+    arrivals: list[NextArrival]
+    source: str = "TMB"
+    updated_at: str
+
+
+class NextStation(Output):
+    code: str
+    name: str | None
+    arrivals: list[NextMetroArrival]
+
+
+class MetroNext(Output):
+    favourite: Target
+    stations: list[NextStation]
+    source: str = "TMB"
+    updated_at: str

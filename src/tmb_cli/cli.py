@@ -6,7 +6,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from tmb_cli import __version__, arrivals, network
+from tmb_cli import __version__, arrivals, favourites, network
 from tmb_cli.client import TmbClient
 from tmb_cli.config import (
     ENV_APP_ID,
@@ -18,7 +18,8 @@ from tmb_cli.config import (
     save_credentials,
 )
 from tmb_cli.errors import Interrupted, NotFound, TmbError, UsageError
-from tmb_cli.models import StopSearch
+from tmb_cli.favourites import Favourite
+from tmb_cli.models import BusArrivals, MetroArrivals, StopSearch, Target
 from tmb_cli.output import emit, emit_error
 
 app = typer.Typer(
@@ -29,6 +30,10 @@ app = typer.Typer(
 )
 auth_app = typer.Typer(help="Manage your TMB API credentials.", no_args_is_help=True)
 app.add_typer(auth_app, name="auth")
+fav_app = typer.Typer(
+    help="Favourite stops and stations, with your walk time to them.", no_args_is_help=True
+)
+app.add_typer(fav_app, name="fav")
 
 
 def _version(value: bool) -> None:
@@ -149,25 +154,34 @@ def auth_status() -> None:
 # --- arrivals -------------------------------------------------------------------
 
 
+def _bus(stop: str, lines: list[str]) -> BusArrivals:
+    _check_codes("Stop", [stop])
+    with _client() as client:
+        payload = client.bus_arrivals(stop)
+    result = arrivals.bus_arrivals(payload, stop, lines)
+    # TMB answers an unknown stop like one with no data: only the cache can tell them apart.
+    cached = network.load_cached() if result.stop.name is None else None
+    if cached and not cached.has_stop(str(int(stop))):
+        raise NotFound(f"No bus stop {stop}.", hint="Find it with `tmb stops <name>`.")
+    return result
+
+
+def _metro(stations: list[str], lines: list[str]) -> MetroArrivals:
+    _check_codes("Station", stations)
+    with _client() as client:
+        payload = client.metro_arrivals(stations)
+    cached = network.load_cached()  # names only: never download for a real-time query
+    name = cached.station_name if cached else (lambda code: None)
+    return arrivals.metro_arrivals(payload, stations, lines, name)
+
+
 @app.command()
 def bus(
     stop: Annotated[str, typer.Argument(help="Bus stop code, e.g. 1103.")],
     line: LineOption = None,
 ) -> None:
     """Next buses at a stop, soonest first."""
-
-    def action() -> object:
-        _check_codes("Stop", [stop])
-        with _client() as client:
-            payload = client.bus_arrivals(stop)
-        result = arrivals.bus_arrivals(payload, stop, line or [])
-        # TMB answers an unknown stop like one with no data: only the cache can tell them apart.
-        cached = network.load_cached() if result.stop.name is None else None
-        if cached and not cached.has_stop(str(int(stop))):
-            raise NotFound(f"No bus stop {stop}.", hint="Find it with `tmb stops <name>`.")
-        return result.model_dump()
-
-    _run(action)
+    _run(lambda: _bus(stop, line or []).model_dump())
 
 
 @app.command()
@@ -179,14 +193,110 @@ def metro(
     line: LineOption = None,
 ) -> None:
     """Next trains at metro stations, soonest first per station."""
+    _run(lambda: _metro(stations, line or []).model_dump())
+
+
+@app.command("next")
+def next_(
+    target: Annotated[
+        str, typer.Argument(help="A favourite's name, or a stop/station code with --walk.")
+    ],
+    walk: Annotated[
+        int | None,
+        typer.Option(
+            "--walk", min=0, help="Minutes you take to get there (overrides the favourite's)."
+        ),
+    ] = None,
+    margin: Annotated[
+        int, typer.Option("--margin", min=0, help="Spare minutes you want at the stop.")
+    ] = 0,
+    metro_code: Annotated[
+        bool, typer.Option("--metro", help="TARGET is a metro station code, not a bus stop.")
+    ] = False,
+    line: LineOption = None,
+) -> None:
+    """Next arrivals, each with `leave_in` (minutes until you must set off) and `make_it`."""
 
     def action() -> object:
-        _check_codes("Station", stations)
-        with _client() as client:
-            payload = client.metro_arrivals(stations)
-        cached = network.load_cached()  # names only: never download for a real-time query
-        name = cached.station_name if cached else (lambda code: None)
-        return arrivals.metro_arrivals(payload, stations, line or [], name).model_dump()
+        if target.isascii() and target.isdigit():
+            if walk is None:
+                raise UsageError(
+                    "Pass --walk with a code (minutes you take to get there).",
+                    hint="Or save it once: `tmb fav add <name> <code> --walk <minutes>`.",
+                )
+            kind = "metro" if metro_code else "bus"
+            goal = Target(name=None, type=kind, codes=[target], walk_minutes=walk)
+        else:
+            fav = favourites.find(target)
+            if fav is None:
+                raise NotFound(f"No favourite named `{target}`.", hint="See them: `tmb fav list`.")
+            if metro_code:
+                raise UsageError("--metro is for codes; a favourite already knows its type.")
+            minutes = fav.walk_minutes if walk is None else walk
+            goal = Target(name=fav.name, type=fav.type, codes=fav.codes, walk_minutes=minutes)
+
+        if goal.type == "bus":
+            return arrivals.bus_next(_bus(goal.codes[0], line or []), goal, margin).model_dump()
+        return arrivals.metro_next(_metro(goal.codes, line or []), goal, margin).model_dump()
+
+    _run(action)
+
+
+# --- favourites ---------------------------------------------------------------------
+
+
+@fav_app.command("add")
+def fav_add(
+    name: Annotated[str, typer.Argument(help="Lowercase name, e.g. casa.")],
+    codes: Annotated[
+        list[str], typer.Argument(help="Bus stop code, or a station's codes (one per line).")
+    ],
+    walk: Annotated[int, typer.Option("--walk", min=0, help="Minutes you take to get there.")],
+    metro_codes: Annotated[bool, typer.Option("--metro", help="CODES are metro stations.")] = False,
+) -> None:
+    """Save (or replace) a favourite stop or station with your walk time to it."""
+
+    def action() -> object:
+        favourites.check_name(name)
+        _check_codes("Station" if metro_codes else "Stop", codes)
+        if not metro_codes and len(codes) > 1:
+            raise UsageError("A bus favourite has one stop code.", hint="For metro, add --metro.")
+        cached = network.load_cached()  # check the codes when we can; never download for this
+        if cached:
+            for code in codes:
+                known = (
+                    cached.station_name(str(int(code)))
+                    if metro_codes
+                    else cached.has_stop(str(int(code)))
+                )
+                if not known:
+                    kind = "metro station" if metro_codes else "bus stop"
+                    raise NotFound(f"No {kind} {code}.", hint="Find it with `tmb stops <name>`.")
+        fav = Favourite(
+            name=name,
+            type="metro" if metro_codes else "bus",
+            codes=[str(int(code)) for code in codes],
+            walk_minutes=walk,
+        )
+        replaced = favourites.add(fav)
+        return {"favourite": fav.model_dump(), "replaced": replaced}
+
+    _run(action)
+
+
+@fav_app.command("list")
+def fav_list() -> None:
+    """List your favourites."""
+    _run(lambda: favourites.load().model_dump())
+
+
+@fav_app.command("remove")
+def fav_remove(name: Annotated[str, typer.Argument(help="The favourite's name.")]) -> None:
+    """Delete a favourite."""
+
+    def action() -> object:
+        favourites.remove(name)
+        return {"removed": name}
 
     _run(action)
 

@@ -32,8 +32,8 @@ tmb auth set | status                              (exists)
 tmb bus <stop> [--line L]...                       real-time arrivals at a bus stop
 tmb metro <station>... [--line L]...               real-time arrivals at metro stations
 tmb stops <query> [--bus|--metro] [--limit N]      search the static network by name
-tmb fav add <name> <code> --walk MIN [--metro] | list | remove <name>
-tmb next <fav-or-code> [--walk MIN] [--line L]...  arrivals + make_it / leave_in
+tmb fav add <name> <code>... --walk MIN [--metro] | list | remove <name>
+tmb next <fav-or-code> [--walk MIN] [--margin MIN] [--metro] [--line L]...  arrivals + make_it / leave_in
 tmb doctor                                         credentials, API reachability, cache age
 tmb skills get                                     the agent guide (SKILL.md) shipped in the package
 ```
@@ -136,11 +136,15 @@ of the cached network. Default `--limit 10`. The stops of a bus stop's lines are
 ### `tmb fav add casa 1103 --walk 4`, `tmb next casa`
 
 Favourites live in `$XDG_CONFIG_HOME/tmb-cli/favourites.json`, separate from `credentials.json`, so
-sharing one never leaks the other. Names: lowercase letters, digits and `-`.
+sharing one never leaks the other. Names: lowercase letters, digits and `-`, starting with a letter
+(so a name never looks like a code). A bus favourite has one stop code; a metro favourite can have
+several, one per line of an interchange (`tmb fav add feina 126 326 --metro --walk 5`), as
+`tmb stops` returns them. `fav add` replaces a favourite with the same name (`"replaced": true`) and,
+when the network is cached, rejects unknown codes with `not_found`; it never downloads the cache.
 
 ```json
 {
-  "favourite": {"name": "casa", "type": "bus", "code": "1103", "walk_minutes": 4},
+  "favourite": {"name": "casa", "type": "bus", "codes": ["1103"], "walk_minutes": 4},
   "stop": {"code": "1103", "name": "Pl Catalunya - Portal de l'Àngel"},
   "arrivals": [
     {"line": "V15", "destination": "Barceloneta", "minutes": 3, "eta": "…", "make_it": false, "leave_in": -1},
@@ -152,7 +156,11 @@ sharing one never leaks the other. Names: lowercase letters, digits and `-`.
 ```
 
 `leave_in` = `minutes - walk_minutes`: when to set off (this is most of the later `leave` idea, for
-free). `make_it` = `leave_in >= margin` (D6). `tmb next 1103 --walk 4` works without a favourite.
+free). `make_it` = `leave_in >= margin` (D6). `tmb next 1103 --walk 4` works without a favourite
+(`"name": null`; `--walk` is required with a code, `--metro` for a station code). `--walk` on a
+favourite overrides its walk time for that call. A metro favourite answers like `tmb metro`
+(`stations`, each arrival with `make_it` and `leave_in`). `codes` is a list for both types, so the
+shape doesn't depend on the type (implementation choice, 25/10/2026).
 
 - **D5. Bus or metro in `fav add`?** **Decided**: bus by default, `--metro` for stations: short and
   explicit. (Alternative: `bus:1103` / `metro:126` prefixes.)

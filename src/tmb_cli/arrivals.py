@@ -7,10 +7,16 @@ from zoneinfo import ZoneInfo
 from tmb_cli.models import (
     Arrival,
     BusArrivals,
+    BusNext,
     MetroArrival,
     MetroArrivals,
+    MetroNext,
+    NextArrival,
+    NextMetroArrival,
+    NextStation,
     Station,
     Stop,
+    Target,
     WireBusResponse,
     WireMetroResponse,
     parse,
@@ -100,4 +106,38 @@ def metro_arrivals(
             for code, timed in by_station.items()
         ],
         updated_at=clock(wire.timestamp),
+    )
+
+
+# --- `tmb next` ---------------------------------------------------------------------
+
+
+def _timing(arrival: Arrival | MetroArrival, walk: int, margin: int) -> dict:
+    leave_in = arrival.minutes - walk
+    return {**arrival.model_dump(), "leave_in": leave_in, "make_it": leave_in >= margin}
+
+
+def bus_next(result: BusArrivals, target: Target, margin: int) -> BusNext:
+    walk = target.walk_minutes
+    return BusNext(
+        favourite=target,
+        stop=result.stop,
+        arrivals=[NextArrival(**_timing(a, walk, margin)) for a in result.arrivals],
+        updated_at=result.updated_at,
+    )
+
+
+def metro_next(result: MetroArrivals, target: Target, margin: int) -> MetroNext:
+    walk = target.walk_minutes
+    return MetroNext(
+        favourite=target,
+        stations=[
+            NextStation(
+                code=s.code,
+                name=s.name,
+                arrivals=[NextMetroArrival(**_timing(a, walk, margin)) for a in s.arrivals],
+            )
+            for s in result.stations
+        ],
+        updated_at=result.updated_at,
     )
