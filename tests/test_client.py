@@ -20,9 +20,9 @@ def test_sends_credentials_as_query_params():
         return httpx.Response(200, json={"ok": True})
 
     with make_client(handler) as client:
-        assert client.bus_arrivals("108") == {"ok": True}
+        assert client.bus_arrivals("0001") == {"ok": True}
 
-    assert seen["url"].path == "/v1/itransit/bus/parades/108"
+    assert seen["url"].path == "/v1/itransit/bus/parades/0001"
     assert seen["url"].params["app_id"] == FAKE_ID
     assert seen["url"].params["app_key"] == FAKE_KEY
 
@@ -63,7 +63,7 @@ def test_metro_requires_a_station():
 def test_http_errors_map_to_typed_errors(status, error, exit_code, retryable):
     with make_client(lambda r: httpx.Response(status, text="nope")) as client:
         with pytest.raises(error) as excinfo:
-            client.bus_arrivals("108")
+            client.bus_arrivals("0001")
     assert excinfo.value.exit_code == exit_code
     assert excinfo.value.retryable is retryable
     assert FAKE_KEY not in excinfo.value.message
@@ -75,7 +75,7 @@ def test_network_failure_is_a_network_error():
 
     with make_client(handler) as client:
         with pytest.raises(NetworkError) as excinfo:
-            client.bus_arrivals("108")
+            client.bus_arrivals("0001")
     assert excinfo.value.exit_code == 6
     assert excinfo.value.retryable is True
 
@@ -84,5 +84,5 @@ def test_network_failure_is_a_network_error():
 def test_invalid_or_non_finite_json_means_the_api_changed(body):
     with make_client(lambda r: httpx.Response(200, text=body)) as client:
         with pytest.raises(ApiChanged) as excinfo:
-            client.bus_arrivals("108")
+            client.bus_arrivals("0001")
     assert excinfo.value.exit_code == 7

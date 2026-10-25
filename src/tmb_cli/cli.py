@@ -137,7 +137,7 @@ def auth_status() -> None:
 
 @app.command()
 def bus(
-    stop: Annotated[str, typer.Argument(help="Bus stop code, e.g. 108.")],
+    stop: Annotated[str, typer.Argument(help="Bus stop code, e.g. 1103.")],
 ) -> None:
     """Real-time arrivals at a bus stop (raw TMB payload for now)."""
 

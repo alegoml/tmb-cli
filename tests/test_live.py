@@ -2,7 +2,7 @@
 
 Skipped unless TMB_LIVE=1. Pick the stop and station with TMB_LIVE_STOP and TMB_LIVE_STATION:
 
-    TMB_LIVE=1 TMB_LIVE_STOP=108 TMB_LIVE_STATION=<code> uv run pytest -m live
+    TMB_LIVE=1 TMB_LIVE_STOP=1103 TMB_LIVE_STATION=126 uv run pytest -m live
 """
 
 import json

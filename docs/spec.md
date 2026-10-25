@@ -1,8 +1,8 @@
 # tmb-cli v1 spec
 
-**Status: DRAFT, for Alex to review.** Based on the swagger and the captures of 25/10/2026
-(`docs/tmb-api.md`). Open decisions are marked **D1…D10**, each with a recommendation; nothing below them gets
-built until Alex picks. Vocabulary: AGENTS.md "Language".
+**Status: agreed 25/10/2026.** Based on the swagger and the captures of 25/10/2026
+(`docs/tmb-api.md`). Decisions **D1…D10** were all taken as recommended (Alex, 25/10/2026); each
+one keeps its reasoning and the rejected alternative. Vocabulary: AGENTS.md "Language".
 
 ## Problem
 
@@ -64,12 +64,12 @@ buses answers the same (night capture pending), `not_found` (exit 4) comes from 
 against the stops cache; without a cache, `parades: []` gives `"stop": {"code": …, "name": null}`
 and empty arrivals.
 
-- **D1. Minutes: floor or round?** iBus is precise to the minute. *Recommend floor*: 3 min 50 s
+- **D1. Minutes: floor or round?** iBus is precise to the minute. **Decided: floor**: 3 min 50 s
   shows 3, so we never promise more time than there is.
-- **D2. Flat list sorted by time, or grouped by line?** *Recommend flat*: the agent reads the first
+- **D2. Flat list sorted by time, or grouped by line?** **Decided: flat**: the agent reads the first
   item for "what comes next", and `--line` covers "when is the V15".
 - **D3. Extra fields?** `id_bus`, `id_sentit`, `transit_namespace` (TMB vs other AMB operator).
-  *Recommend leaving them out of v1* (tokens); `bus_id` can come back for phase 2.
+  **Decided: leave them out of v1** (tokens); `bus_id` can come back for phase 2.
 
 ### `tmb metro 126`
 
@@ -103,25 +103,26 @@ sorting and `--line` as `bus`.
   "query": "catalunya",
   "results": [
     {"type": "bus", "code": "1103", "name": "Pl Catalunya - Portal de l'Àngel", "description": "…"},
-    {"type": "metro", "code": "126", "name": "Catalunya", "line": "L1"}
+    {"type": "metro", "name": "Catalunya", "codes": {"L1": "126", "L3": "326"}}
   ],
   "source": "TMB",
   "updated_at": "2026-10-20T09:00:00+02:00"
 }
 ```
 
-(Values made up.) Searches a local cache of `transit/parades` plus the metro stations of each line (one result per
-line, because real-time codes are per line: 11 calls, one per metro line). Matching ignores case
+(Values made up, except Catalunya's codes.) Searches a local cache of `transit/parades` plus the
+metro stations of each line (11 calls, one per metro line), one result per station with its
+per-line codes joined by `CODI_GRUP_ESTACIO` (D10). Matching ignores case
 and accents, over name and description; exact > prefix > substring. (`transit/parades` seems to list
 active stops only; no "not in use" marker was seen.) `updated_at` is TMB's dataset date (`DATA`)
 of the cached network. Default `--limit 10`. The stops of a bus stop's lines aren't in
 `transit/parades`, so v1 doesn't list lines per bus stop.
 
 - **D10. Metro interchanges in `stops`?** Real-time codes are per line (Catalunya: 126 on L1, 326
-  on L3), joined by the group code. *Recommend* one result per station with all its codes,
+  on L3), joined by the group code. **Decided**: one result per station with all its codes,
   `{"type": "metro", "name": "Catalunya", "codes": {"L1": "126", "L3": "326"}}`, so the agent
-  passes them all to `tmb metro`. (Alternative: one result per line, as drafted above.)
-- **D4. Cache refresh?** *Recommend*: download on first use, refresh automatically when older than
+  passes them all to `tmb metro`. (Rejected: one result per line.)
+- **D4. Cache refresh?** **Decided**: download on first use, refresh automatically when older than
   7 days, `tmb stops --refresh` to force it. Stored in `$XDG_CACHE_HOME/tmb-cli/`.
 
 ### `tmb fav add casa 1103 --walk 4`, `tmb next casa`
@@ -145,9 +146,9 @@ sharing one never leaks the other. Names: lowercase letters, digits and `-`.
 `leave_in` = `minutes - walk_minutes`: when to set off (this is most of the later `leave` idea, for
 free). `make_it` = `leave_in >= margin` (D6). `tmb next 1103 --walk 4` works without a favourite.
 
-- **D5. Bus or metro in `fav add`?** *Recommend* bus by default, `--metro` for stations: short and
+- **D5. Bus or metro in `fav add`?** **Decided**: bus by default, `--metro` for stations: short and
   explicit. (Alternative: `bus:1103` / `metro:126` prefixes.)
-- **D6. Safety margin for `make_it`?** *Recommend* 0 by default, `--margin MIN` to add one. The walk
+- **D6. Safety margin for `make_it`?** **Decided**: 0 by default, `--margin MIN` to add one. The walk
   time the user gives is already their own estimate.
 
 ### `tmb doctor`
@@ -174,12 +175,12 @@ TMB's terms require citing the source and the date of last update. Every data co
 `"source": "TMB"` and `"updated_at"` (real time: TMB's `timestamp`; `stops`: the dataset's `DATA`).
 README and SKILL.md credit TMB too.
 
-- **D7. Attribution in every output?** It costs ~15 tokens per call. *Recommend yes*: it's what the
+- **D7. Attribution in every output?** It costs ~15 tokens per call. **Decided: yes**: it's what the
   terms literally ask for, and `updated_at` is useful anyway (the agent knows how fresh data is).
 
 ## Times
 
-- **D8. `eta` format?** *Recommend* ISO 8601 with offset in Europe/Madrid
+- **D8. `eta` format?** **Decided**: ISO 8601 with offset in Europe/Madrid
   (`2026-10-24T18:06:12+02:00`): unambiguous, every agent parses it. `minutes` covers the "how long".
 
 ## Out of scope for v1
@@ -187,5 +188,5 @@ README and SKILL.md credit TMB too.
 `watch` and notifications, MCP server, `plan` (trip planner), `near` (stops around a point; the API
 supports it), Bicing, service alerts (no endpoint), the legacy iBus API, lines per bus stop.
 
-- **D9. `--format pretty` in v1?** *Recommend no*: the official app serves humans better; add it
+- **D9. `--format pretty` in v1?** **Decided: no**: the official app serves humans better; add it
   after v1 if people ask.

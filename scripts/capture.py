@@ -2,8 +2,8 @@
 
 Usage (credentials from `tmb auth set` or TMB_APP_ID/TMB_APP_KEY):
 
-    uv run python scripts/capture.py itransit/bus/parades/108
-    uv run python scripts/capture.py "itransit/metro/estacions?estacions=123"
+    uv run python scripts/capture.py itransit/bus/parades/1103
+    uv run python scripts/capture.py "itransit/metro/estacions?estacions=126"
     uv run python scripts/capture.py transit/linies/bus
 
 Each argument is a GET path under https://api.tmb.cat/v1/. Any occurrence of your app_id or app_key

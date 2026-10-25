@@ -26,7 +26,7 @@ def test_version():
 
 
 def test_bus_without_credentials_fails_with_json_error():
-    result = runner.invoke(app, ["bus", "108"])
+    result = runner.invoke(app, ["bus", "0001"])
     assert result.exit_code == 3
     assert result.stdout == ""
     error = json.loads(result.stderr)["error"]
@@ -44,7 +44,7 @@ def test_unexpected_exception_is_reported_by_type_only(monkeypatch):
         raise RuntimeError("GET https://api.tmb.cat/v1/x?app_key=env-secret-key")
 
     monkeypatch.setattr(cli.TmbClient, "bus_arrivals", boom)
-    result = runner.invoke(app, ["bus", "108"])
+    result = runner.invoke(app, ["bus", "0001"])
 
     assert result.exit_code == 1
     assert json.loads(result.stderr)["error"] == {
@@ -112,7 +112,7 @@ def test_auth_set_cancelled_prompt_is_a_usage_error(isolated_config):
 
 def test_corrupt_credentials_file_is_a_json_error(isolated_config):
     (isolated_config / "credentials.json").write_text('{"app_id": "x", "app_key": "leaky-key"')
-    result = runner.invoke(app, ["bus", "108"])
+    result = runner.invoke(app, ["bus", "0001"])
     assert result.exit_code == 3
     assert json.loads(result.stderr)["error"]["code"] == "missing_credentials"
     assert "leaky-key" not in result.output

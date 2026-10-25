@@ -75,7 +75,7 @@ client isn't addressed; each user accepts the terms with their own key.
 ## Language
 Use these words in code, output and docs; avoid the alternatives. [wallapop's CONTEXT.md habit]
 
-- **Stop** (parada): a bus stop, identified by its stop code (e.g. `108`). _Avoid_: station.
+- **Stop** (parada): a bus stop, identified by its stop code (e.g. `1103`). _Avoid_: station.
 - **Station** (estació): a metro station, identified by its station code. _Avoid_: stop.
 - **Line** (línia): a bus or metro line as TMB names it (`V15`, `H12`, `L3`). _Avoid_: route.
 - **Arrival**: one predicted vehicle at a stop or station. `minutes` = minutes from now, `eta` =
@@ -111,11 +111,11 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
    - [ ] Pending capture: a stop with no buses (night); synthetic fixtures updated to the confirmed shape in `tests/fixtures/`
 4. - [x] `docs/tmb-api.md`: response shapes from the public swagger (to confirm with captures)
    - [x] `docs/spec.md` draft: v1 commands, JSON shapes, user stories, decisions D1–D9 [wallapop]
-   - [ ] Alex picks D1–D10; spec updated after the captures. No new commands before that
+   - [x] Alex picked D1–D10 (all as recommended, 25/10/2026); spec updated with the captures
 5. - [ ] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
      and output models (our stable contract) [vodafone]; compact `bus`/`metro`; `--line` filter
 6. - [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
-7. - [ ] Favourites with walking time: `tmb fav add casa 108 --walk 4`, `tmb next casa` → per arrival
+7. - [ ] Favourites with walking time: `tmb fav add casa 1103 --walk 4`, `tmb next casa` → per arrival
      `make_it: true/false` (answers "¿me da tiempo?")
 8. - [ ] Agents: `SKILL.md` + `tmb skills get` (the skill ships inside the package) [wallapop];
      `tmb doctor` (credentials, connectivity, cache age) [wallapop]; README "Using it from a coding

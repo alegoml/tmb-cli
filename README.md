@@ -34,9 +34,9 @@ Environment variables `TMB_APP_ID` and `TMB_APP_KEY` take precedence over the fi
 ## Usage
 
 ```bash
-tmb bus 108              # next buses at stop 108
-tmb metro 123 115        # next trains at metro stations 123 and 115
-tmb bus 108 | jq .
+tmb bus 1103             # next buses at stop 1103 (Pl Catalunya)
+tmb metro 126 326        # next trains at Catalunya, L1 and L3 (codes are per line)
+tmb bus 1103 | jq .
 ```
 
 Errors are printed to stderr as one line of JSON, with stable exit codes:

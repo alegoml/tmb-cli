@@ -26,13 +26,13 @@ Predictions are based on the bus's last known position, "with a maximum precisio
 ```text
 timestamp                    int   query time, epoch milliseconds
 parades[]
-  codi_parada                str   "108"
-  nom_parada                 str   "Pl Espanya - FGC"
+  codi_parada                str   "1103"
+  nom_parada                 str   "Pl Catalunya - Portal de l'Àngel"
   linies_trajectes[]               one entry per route of a line serving the stop
     id_operador              int   2
     transit_namespace        str   "bus" = TMB line, "amb" = another AMB operator's line
     codi_linia               int   215     internal code (✅ int; the swagger says str)
-    nom_linia                str   "H12"   the name people know
+    nom_linia                str   "V15"   the name people know
     id_sentit                int   1 = outbound (anada), 2 = return (tornada)
     codi_trajecte            str   "2151"
     desti_trajecte           str   "Barceloneta"   destination
