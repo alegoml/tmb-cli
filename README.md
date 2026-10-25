@@ -37,6 +37,7 @@ Environment variables `TMB_APP_ID` and `TMB_APP_KEY` take precedence over the fi
 tmb bus 1103             # next buses at stop 1103 (Pl Catalunya)
 tmb bus 1103 --line V15  # only the V15 (case-insensitive, repeatable)
 tmb metro 126 326        # next trains at Catalunya, L1 and L3 (codes are per line)
+tmb stops catalunya      # find stop and station codes by name
 ```
 
 ```json
@@ -52,8 +53,13 @@ tmb metro 126 326        # next trains at Catalunya, L1 and L3 (codes are per li
 ```
 
 `minutes` is rounded down (3 min 50 s shows 3) and `eta` is Barcelona time. `metro` returns
-`stations`, each with its `arrivals` (plus `track`); station names come in a later version. Data:
-TMB, as of `updated_at`.
+`stations`, each with its `arrivals` (plus `track`) and the station's `name` once the network is
+cached. Data: TMB, as of `updated_at`.
+
+`tmb stops <name>` searches bus stops and metro stations, ignoring case and accents. A metro
+station lists one code per line (`"codes": {"L1": "126", "L3": "326"}`): pass them all to
+`tmb metro`. The first run downloads the static network (13 requests) to
+`~/.cache/tmb-cli/network.json`; it refreshes weekly, or now with `--refresh`.
 
 Errors are printed to stderr as one line of JSON, with stable exit codes:
 

@@ -61,9 +61,9 @@ the README (exit codes 0–7, 130).
 (`temps_arribada` before `timestamp`). `arrivals` is one flat list sorted by arrival time, then
 line (D2). Stop and station codes must be digits, else `usage` (exit 2) before any request. No buses → `"arrivals": []`, exit 0. `--line` is case-insensitive and
 repeatable. Unknown stop: the API answers 200 with `parades: []` (captured). If a real stop with no
-buses answers the same (night capture pending), `not_found` (exit 4) comes from checking the code
-against the stops cache; without a cache, `parades: []` gives `"stop": {"code": …, "name": null}`
-and empty arrivals.
+buses answers the same (night capture pending), so `not_found` (exit 4) comes from the stops
+cache: `parades: []` and a cache that doesn't list the code. Without a cache, `parades: []` gives
+`"stop": {"code": …, "name": null}` and empty arrivals. `bus` never downloads the cache itself.
 
 - **D1. Minutes: floor or round?** iBus is precise to the minute. **Decided: floor**: 3 min 50 s
   shows 3, so we never promise more time than there is.
@@ -94,7 +94,8 @@ and empty arrivals.
 `transit/linies/metro/{line}/estacions`; Catalunya on L3 is 326.) The API groups by line; we
 regroup by station. `tmb metro 126` gives only L1; to see every line at an interchange, pass all its
 codes (`tmb metro 126 326`), which `tmb stops` returns (D10). The real-time response has **no station name**:
-`name` comes from the stops cache, `null` if there's no cache yet. Same rules for `minutes`,
+`name` comes from the stops cache, `null` if there's no cache yet (`metro` never downloads it:
+run `tmb stops` once). Same rules for `minutes`,
 sorting and `--line` as `bus`.
 
 ### `tmb stops catalunya`
@@ -112,9 +113,13 @@ sorting and `--line` as `bus`.
 ```
 
 (Values made up, except Catalunya's codes.) Searches a local cache of `transit/parades` plus the
-metro stations of each line (11 calls, one per metro line), one result per station with its
-per-line codes joined by `CODI_GRUP_ESTACIO` (D10). Matching ignores case
-and accents, over name and description; exact > prefix > substring. (`transit/parades` seems to list
+metro stations of each line (13 requests: stops, lines, one per metro line), one result per station
+with its per-line codes joined by `CODI_GRUP_ESTACIO` (D10). The cache keeps only codes and names
+(~250 KB). Matching ignores case, accents and punctuation, and spells street types the way TMB
+abbreviates them (plaça → pl, avinguda → av, passeig → pg, carretera → ctra). Ranking: a stop
+code or an exact name, then name prefix, then every query word starting a word of the name, then
+substring of the name, then every query word in name + description; ties go metro first, then by
+name. (`transit/parades` seems to list
 active stops only; no "not in use" marker was seen.) `updated_at` is TMB's dataset date (`DATA`)
 of the cached network. Default `--limit 10`. The stops of a bus stop's lines aren't in
 `transit/parades`, so v1 doesn't list lines per bus stop.

@@ -1,0 +1,12 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "id": "ESTACIONS_LINIA.1", "geometry": {"type": "Point", "coordinates": [2.0, 41.0]}, "properties": {"CODI_ESTACIO": 901, "CODI_ESTACIO_LINIA": 901, "CODI_GRUP_ESTACIO": 6660901, "NOM_ESTACIO": "Prova", "CODI_LINIA": 9, "NOM_LINIA": "X9", "NOM_TIPUS_ESTAT": "Operatiu", "DATA": "2026-01-01Z"}},
+    {"type": "Feature", "id": "ESTACIONS_LINIA.2", "geometry": {"type": "Point", "coordinates": [2.0, 41.0]}, "properties": {"CODI_ESTACIO": 902, "CODI_ESTACIO_LINIA": 902, "CODI_GRUP_ESTACIO": 6660902, "NOM_ESTACIO": "Estació Inventada", "CODI_LINIA": 9, "NOM_LINIA": "X9", "NOM_TIPUS_ESTAT": "Operatiu", "DATA": "2026-01-01Z"}}
+  ],
+  "totalFeatures": 2,
+  "numberMatched": 2,
+  "numberReturned": 2,
+  "timeStamp": "2026-01-02T08:00:00.000Z",
+  "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}}
+}

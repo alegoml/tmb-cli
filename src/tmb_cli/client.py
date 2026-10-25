@@ -97,3 +97,14 @@ class TmbClient:
         if not station_codes:
             raise ValueError("At least one station code is required.")
         return self.get("itransit/metro/estacions", params={"estacions": ",".join(station_codes)})
+
+    # --- static network (cached by `network.py`) ------------------------------
+
+    def bus_stops(self) -> dict:
+        return self.get("transit/parades")
+
+    def metro_lines(self) -> dict:
+        return self.get("transit/linies/metro")
+
+    def metro_line_stations(self, line_code: int) -> dict:
+        return self.get(f"transit/linies/metro/{line_code}/estacions")

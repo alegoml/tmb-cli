@@ -1,0 +1,183 @@
+import json
+import time
+from pathlib import Path
+
+import pytest
+from typer.testing import CliRunner
+
+from tmb_cli import cli, network
+from tmb_cli.cli import app
+
+FIXTURES = Path(__file__).parent / "fixtures"
+runner = CliRunner()
+
+
+def fixture(name: str) -> dict:
+    return json.loads((FIXTURES / name).read_text())
+
+
+class FakeClient:
+    """Answers the static endpoints from synthetic fixtures and counts requests."""
+
+    requests = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        pass
+
+    def _answer(self, name: str) -> dict:
+        FakeClient.requests += 1
+        return fixture(name)
+
+    def bus_stops(self):
+        return self._answer("static_stops.json")
+
+    def metro_lines(self):
+        return self._answer("static_metro_lines.json")
+
+    def metro_line_stations(self, line_code):
+        return self._answer(f"static_metro_{line_code}_stations.json")
+
+
+@pytest.fixture(autouse=True)
+def isolated_dirs(tmp_path, monkeypatch):
+    monkeypatch.setenv("TMB_CLI_CONFIG_DIR", str(tmp_path / "config"))
+    monkeypatch.setenv("TMB_CLI_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setenv("TMB_APP_ID", "test-id")
+    monkeypatch.setenv("TMB_APP_KEY", "test-secret-key")
+    FakeClient.requests = 0
+
+
+@pytest.fixture
+def net() -> network.Network:
+    return network.download(FakeClient())
+
+
+def test_download_keeps_codes_and_names_and_joins_interchanges(net):
+    assert net.updated_at == "2026-01-02"  # the newest dataset date
+    assert net.stops[1].model_dump() == {
+        "code": "2",
+        "name": "Av Inventada - Rambla Fictícia",
+        "description": None,
+    }
+    assert [s.model_dump() for s in net.stations] == [
+        {"name": "Prova", "codes": {"X9": "901", "X8": "801"}},
+        {"name": "Estació Inventada", "codes": {"X9": "902"}},
+    ]
+    assert net.station_name("801") == "Prova"
+    assert net.station_name("999") is None
+
+
+def test_cache_is_reused_while_fresh(net):
+    network.get_network(FakeClient)
+    FakeClient.requests = 0
+    network.get_network(FakeClient)
+    assert FakeClient.requests == 0
+    network.get_network(FakeClient, refresh=True)
+    assert FakeClient.requests == 4  # stops, lines, two lines' stations
+
+
+def test_stale_cache_is_downloaded_again(net):
+    network.save(net.model_copy(update={"downloaded_at": time.time() - 8 * 24 * 3600}))
+    FakeClient.requests = 0
+    network.get_network(FakeClient)
+    assert FakeClient.requests == 4
+
+
+def test_unreadable_cache_counts_as_missing():
+    network.cache_path().parent.mkdir(parents=True)
+    network.cache_path().write_text("{not json")
+    assert network.load_cached() is None
+
+
+def test_normalize_drops_case_accents_punctuation_and_spells_street_types_short():
+    assert network.normalize("Plaça Catalunya/Portal de l'Àngel") == (
+        "pl catalunya portal de l angel"
+    )
+    assert network.normalize("Paral·lel") == network.normalize("paral.lel") == "paral lel"
+    assert network.normalize("Avinguda Fictícia") == "av ficticia"
+
+
+def _found(results) -> list:
+    return [getattr(r, "code", None) or r.codes for r in results]
+
+
+def test_search_ranks_exact_names_first_then_metro_then_bus(net):
+    assert _found(network.search(net, "prova")) == [{"X9": "901", "X8": "801"}, "1", "3"]
+
+
+def test_search_matches_word_prefixes_abbreviations_and_codes(net):
+    assert _found(network.search(net, "plaça prov")) == ["1"]
+    assert _found(network.search(net, "inventada ficticia")) == ["2"]
+    assert _found(network.search(net, "2")) == ["2"]
+    assert _found(network.search(net, "estacio inv")) == [{"X9": "902"}]
+
+
+def test_search_filters_and_limit(net):
+    assert _found(network.search(net, "prova", metro=False)) == ["1", "3"]
+    assert _found(network.search(net, "prova", bus=False)) == [{"X9": "901", "X8": "801"}]
+    assert len(network.search(net, "prova", limit=1)) == 1
+
+
+@pytest.fixture
+def fake_api(monkeypatch):
+    monkeypatch.setattr(cli, "_client", FakeClient)
+
+
+def test_cli_stops(fake_api):
+    result = runner.invoke(app, ["stops", "Prova", "--limit", "2"])
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        "query": "Prova",
+        "results": [
+            {"type": "metro", "name": "Prova", "codes": {"X9": "901", "X8": "801"}},
+            {
+                "type": "bus",
+                "code": "1",
+                "name": "Pl de Prova - Carrer Fals",
+                "description": "Pl. Prova/Fals",
+            },
+        ],
+        "source": "TMB",
+        "updated_at": "2026-01-02",
+    }
+
+
+@pytest.mark.parametrize("args", [["stops", "x", "--bus", "--metro"], ["stops", "·/·"]])
+def test_cli_stops_usage_errors(fake_api, args):
+    result = runner.invoke(app, args)
+    assert result.exit_code == 2
+    assert json.loads(result.stderr)["error"]["code"] == "usage"
+    assert FakeClient.requests == 0
+
+
+def test_cli_metro_names_stations_from_the_cache(net, monkeypatch):
+    network.save(net)
+    monkeypatch.setattr(
+        cli.TmbClient, "metro_arrivals", lambda self, codes: fixture("metro_stations.json")
+    )
+    result = runner.invoke(app, ["metro", "901", "801", "999"])
+    stations = json.loads(result.stdout)["stations"]
+    assert [(s["code"], s["name"]) for s in stations] == [
+        ("901", "Prova"),
+        ("801", "Prova"),
+        ("999", None),
+    ]
+
+
+def test_cli_bus_unknown_stop_is_not_found_when_the_cache_knows(net, monkeypatch):
+    monkeypatch.setattr(
+        cli.TmbClient, "bus_arrivals", lambda self, code: fixture("bus_unknown_stop.json")
+    )
+    result = runner.invoke(app, ["bus", "0009"])  # no cache yet: can't tell
+    assert result.exit_code == 0
+    assert json.loads(result.stdout)["arrivals"] == []
+
+    network.save(net)
+    result = runner.invoke(app, ["bus", "0002"])  # in the stops list, just no buses now
+    assert result.exit_code == 0
+    result = runner.invoke(app, ["bus", "0009"])
+    assert result.exit_code == 4
+    assert json.loads(result.stderr)["error"]["code"] == "not_found"

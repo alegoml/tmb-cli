@@ -6,7 +6,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from tmb_cli import __version__, arrivals
+from tmb_cli import __version__, arrivals, network
 from tmb_cli.client import TmbClient
 from tmb_cli.config import (
     ENV_APP_ID,
@@ -17,7 +17,8 @@ from tmb_cli.config import (
     mask,
     save_credentials,
 )
-from tmb_cli.errors import Interrupted, TmbError, UsageError
+from tmb_cli.errors import Interrupted, NotFound, TmbError, UsageError
+from tmb_cli.models import StopSearch
 from tmb_cli.output import emit, emit_error
 
 app = typer.Typer(
@@ -159,7 +160,12 @@ def bus(
         _check_codes("Stop", [stop])
         with _client() as client:
             payload = client.bus_arrivals(stop)
-        return arrivals.bus_arrivals(payload, stop, line or []).model_dump()
+        result = arrivals.bus_arrivals(payload, stop, line or [])
+        # TMB answers an unknown stop like one with no data: only the cache can tell them apart.
+        cached = network.load_cached() if result.stop.name is None else None
+        if cached and not cached.has_stop(str(int(stop))):
+            raise NotFound(f"No bus stop {stop}.", hint="Find it with `tmb stops <name>`.")
+        return result.model_dump()
 
     _run(action)
 
@@ -178,7 +184,37 @@ def metro(
         _check_codes("Station", stations)
         with _client() as client:
             payload = client.metro_arrivals(stations)
-        return arrivals.metro_arrivals(payload, stations, line or []).model_dump()
+        cached = network.load_cached()  # names only: never download for a real-time query
+        name = cached.station_name if cached else (lambda code: None)
+        return arrivals.metro_arrivals(payload, stations, line or [], name).model_dump()
+
+    _run(action)
+
+
+# --- static network -------------------------------------------------------------------
+
+
+@app.command()
+def stops(
+    query: Annotated[str, typer.Argument(help="Part of a stop or station name, e.g. catalunya.")],
+    bus_only: Annotated[bool, typer.Option("--bus", help="Only bus stops.")] = False,
+    metro_only: Annotated[bool, typer.Option("--metro", help="Only metro stations.")] = False,
+    limit: Annotated[int, typer.Option("--limit", min=1, help="Most results to return.")] = 10,
+    refresh: Annotated[
+        bool, typer.Option("--refresh", help="Download the network again first.")
+    ] = False,
+) -> None:
+    """Find stop and station codes by name (ignores case and accents). Metro stations list one
+    code per line. Downloads the static network on first use and weekly after that."""
+
+    def action() -> object:
+        if bus_only and metro_only:
+            raise UsageError("Pass --bus or --metro, not both.")
+        if not network.normalize(query):
+            raise UsageError("The query needs at least one letter or digit.")
+        net = network.get_network(_client, refresh=refresh)
+        results = network.search(net, query, bus=not metro_only, metro=not bus_only, limit=limit)
+        return StopSearch(query=query, results=results, updated_at=net.updated_at).model_dump()
 
     _run(action)
 

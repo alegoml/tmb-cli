@@ -1,11 +1,9 @@
 """Turn TMB real-time responses into our compact output (docs/spec.md, `bus` and `metro`)."""
 
+from collections.abc import Callable
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, ValidationError
-
-from tmb_cli.errors import ApiChanged
 from tmb_cli.models import (
     Arrival,
     BusArrivals,
@@ -15,20 +13,10 @@ from tmb_cli.models import (
     Stop,
     WireBusResponse,
     WireMetroResponse,
+    parse,
 )
 
 MADRID = ZoneInfo("Europe/Madrid")
-
-
-def parse[M: BaseModel](model: type[M], payload: object) -> M:
-    try:
-        return model.model_validate(payload)
-    except ValidationError as exc:
-        where = ".".join(str(part) for part in exc.errors()[0]["loc"]) or "response"
-        raise ApiChanged(
-            f"TMB API response has an unexpected shape (at `{where}`).",
-            hint="The TMB API may have changed; please open an issue.",
-        ) from None
 
 
 def clock(ms: int) -> str:
@@ -78,8 +66,14 @@ def bus_arrivals(payload: object, stop_code: str, lines: list[str]) -> BusArriva
     )
 
 
-def metro_arrivals(payload: object, station_codes: list[str], lines: list[str]) -> MetroArrivals:
-    """TMB groups by line, then by station and track; we regroup by station, in the order asked."""
+def metro_arrivals(
+    payload: object,
+    station_codes: list[str],
+    lines: list[str],
+    station_name: Callable[[str], str | None] = lambda code: None,
+) -> MetroArrivals:
+    """TMB groups by line, then by station and track; we regroup by station, in the order asked.
+    The response has no station names: `station_name` looks them up (in the cache)."""
     wire = parse(WireMetroResponse, payload)
     wanted = {line.upper() for line in lines}
     # TMB returns codes as ints, so "0126" comes back as 126.
@@ -102,7 +96,7 @@ def metro_arrivals(payload: object, station_codes: list[str], lines: list[str]) 
                     )
     return MetroArrivals(
         stations=[
-            Station(code=str(code), name=None, arrivals=_by_time(timed))
+            Station(code=str(code), name=station_name(str(code)), arrivals=_by_time(timed))
             for code, timed in by_station.items()
         ],
         updated_at=clock(wire.timestamp),

@@ -1,0 +1,28 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "PARADES_ACTIVES.1",
+      "geometry": {"type": "Point", "coordinates": [2.0, 41.0]},
+      "properties": {"ID_PARADA": 1, "CODI_PARADA": 1, "NOM_PARADA": "Pl de Prova - Carrer Fals", "DESC_PARADA": "Pl. Prova/Fals", "TIPIFICACIO_PARADA": "N", "NOM_POBLACIO": "Ciutat de Prova", "DATA": "2026-01-01Z"}
+    },
+    {
+      "type": "Feature",
+      "id": "PARADES_ACTIVES.2",
+      "geometry": {"type": "Point", "coordinates": [2.0, 41.0]},
+      "properties": {"ID_PARADA": 2, "CODI_PARADA": 2, "NOM_PARADA": "Av Inventada - Rambla Fictícia", "DESC_PARADA": null, "TIPIFICACIO_PARADA": "NXB", "NOM_POBLACIO": "Ciutat de Prova", "DATA": "2026-01-01Z"}
+    },
+    {
+      "type": "Feature",
+      "id": "PARADES_ACTIVES.3",
+      "geometry": {"type": "Point", "coordinates": [2.0, 41.0]},
+      "properties": {"ID_PARADA": 3, "CODI_PARADA": 3, "NOM_PARADA": "Carrer Fals - Final de trajecte", "DESC_PARADA": "Fals/Prova", "TIPIFICACIO_PARADA": "N", "NOM_POBLACIO": "Ciutat de Prova", "DATA": "2026-01-02Z"}
+    }
+  ],
+  "totalFeatures": 3,
+  "numberMatched": 3,
+  "numberReturned": 3,
+  "timeStamp": "2026-01-02T08:00:00.000Z",
+  "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}}
+}

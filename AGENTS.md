@@ -13,7 +13,8 @@ coding agents can answer things like "¿me da tiempo a pillar el V15?". Inspired
 - Python 3.12+, uv, Typer (CLI), httpx (HTTP), pytest, ruff.
 - `src/tmb_cli/cli.py` commands · `client.py` TMB API client · `config.py` credentials ·
   `errors.py` typed errors + exit codes · `output.py` JSON to stdout/stderr ·
-  `models.py` `Wire*` (TMB responses) and output models · `arrivals.py` TMB → our output.
+  `models.py` `Wire*` (TMB responses) and output models · `arrivals.py` TMB → our output ·
+  `network.py` static network cache + name search.
 - `tests/` offline tests only; synthetic responses in `tests/fixtures/`.
 
 ## Commands
@@ -115,7 +116,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
    - [x] Alex picked D1–D10 (all as recommended, 25/10/2026); spec updated with the captures
 5. - [x] Pydantic `Wire*` models (only fields we read, unknown ignored; mismatch → `api_changed`)
      and output models (our stable contract) [vodafone]; compact `bus`/`metro`; `--line` filter
-6. - [ ] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
+6. - [x] `tmb stops <name>`: search stops/stations by name → codes (cache the static network locally)
 7. - [ ] Favourites with walking time: `tmb fav add casa 1103 --walk 4`, `tmb next casa` → per arrival
      `make_it: true/false` (answers "¿me da tiempo?")
 8. - [ ] Agents: `SKILL.md` + `tmb skills get` (the skill ships inside the package) [wallapop];

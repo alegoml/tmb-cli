@@ -1,0 +1,12 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "id": "LINIES_METRO.9", "geometry": null, "properties": {"ID_LINIA": 90, "CODI_LINIA": 9, "NOM_LINIA": "X9", "DESC_LINIA": "Prova - Estació Inventada", "COLOR_LINIA": "000000", "DATA": "2026-01-01Z"}},
+    {"type": "Feature", "id": "LINIES_METRO.8", "geometry": null, "properties": {"ID_LINIA": 80, "CODI_LINIA": 8, "NOM_LINIA": "X8", "DESC_LINIA": "Prova - Final de Prova", "COLOR_LINIA": "FFFFFF", "DATA": "2026-01-01Z"}}
+  ],
+  "totalFeatures": 2,
+  "numberMatched": 2,
+  "numberReturned": 2,
+  "timeStamp": "2026-01-02T08:00:00.000Z",
+  "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}}
+}
