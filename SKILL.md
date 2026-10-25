@@ -39,8 +39,11 @@ spare time. Without a favourite, `tmb next 1103 --walk 4` works too (`--metro` f
 
 Ask the user for the stop (name or code) and how many minutes they walk to it, then:
 
-1. Find the code: `tmb --no-input stops "<name>"`. Bus results have `code` and `town`; metro
-   results have `codes`, one per line (`{"L1": "126", "L3": "326"}`). If several match, ask.
+1. Find the code: `tmb --no-input stops <words>` (name, street or town). Bus results have `code`
+   and `town`; metro results have `codes`, one per line (`{"L1": "126", "L3": "326"}`). If several
+   match, ask. No results can mean the stop belongs to another operator (e.g. most buses in
+   Badalona are TUSGSAL's): `tmb` only covers TMB's network, so say so and suggest a nearby metro
+   station or a TMB stop instead.
 2. Save it: `tmb --no-input fav add casa 1103 --walk 4`, or for a station with all its lines
    `tmb --no-input fav add feina 126 326 --metro --walk 5`. Names: lowercase, start with a letter.
 

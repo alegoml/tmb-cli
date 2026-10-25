@@ -162,9 +162,9 @@ def _all_tokens(tokens: list[str], words: list[str]) -> bool:
     return all(any(word.startswith(token) for word in words) for token in tokens)
 
 
-def rank(query: str, name: str, description: str | None = None) -> int | None:
+def rank(query: str, name: str, *extra: str | None) -> int | None:
     """Lower is better: exact name, name prefix, every word in the name, substring of the name,
-    every word in name + description. None if it doesn't match."""
+    every word in the name plus `extra` (description, town). None if it doesn't match."""
     name = normalize(name)
     tokens = query.split()
     if name == query:
@@ -175,7 +175,8 @@ def rank(query: str, name: str, description: str | None = None) -> int | None:
         return 2
     if query in name:
         return 3
-    if description and _all_tokens(tokens, (name + " " + normalize(description)).split()):
+    more = " ".join(normalize(text) for text in extra if text)
+    if more and _all_tokens(tokens, f"{name} {more}".split()):
         return 4
     return None
 
@@ -200,7 +201,7 @@ def search(
                 found.append((r, 0, where, station.name, StationResult(**station.model_dump())))
     if bus:
         for stop in network.stops:
-            r = 0 if q == stop.code else rank(q, stop.name, stop.description)
+            r = 0 if q == stop.code else rank(q, stop.name, stop.description, stop.town)
             if r is not None:
                 group = 1 if stop.town == "Barcelona" else 2  # most TMB stops and users
                 where = position(q, stop.name)

@@ -115,10 +115,11 @@ sorting and `--line` as `bus`.
 (Values made up, except Catalunya's codes.) Searches a local cache of `transit/parades` plus the
 metro stations of each line (13 requests: stops, lines, one per metro line), one result per station
 with its per-line codes joined by `CODI_GRUP_ESTACIO` (D10). The cache keeps only codes and names
-(~250 KB). Matching ignores case, accents and punctuation, and spells street types the way TMB
+(~250 KB). The query is all the words given (no quotes needed). Matching ignores case, accents
+and punctuation, and spells street types the way TMB
 abbreviates them (plaça → pl, avinguda → av, passeig → pg, carretera → ctra). Ranking: a stop
 code or an exact name, then name prefix, then every query word starting a word of the name, then
-substring of the name, then every query word in name + description. Ties: metro, then Barcelona
+substring of the name, then every query word in name + description + town. Ties: metro, then Barcelona
 bus stops, then other towns' (83% of stops are in Barcelona; Alex, 25/10/2026); then the earlier
 the query appears in the name; then the name. Bus results carry `town` (`NOM_POBLACIO`) so the
 agent can tell two "Av Catalunya" apart. (`transit/parades` seems to list

@@ -318,7 +318,9 @@ def fav_remove(name: Annotated[str, typer.Argument(help="The favourite's name.")
 
 @app.command()
 def stops(
-    query: Annotated[str, typer.Argument(help="Part of a stop or station name, e.g. catalunya.")],
+    words: Annotated[
+        list[str], typer.Argument(help="Words of a stop or station name (no quotes needed).")
+    ],
     bus_only: Annotated[bool, typer.Option("--bus", help="Only bus stops.")] = False,
     metro_only: Annotated[bool, typer.Option("--metro", help="Only metro stations.")] = False,
     limit: Annotated[int, typer.Option("--limit", min=1, help="Most results to return.")] = 10,
@@ -326,8 +328,11 @@ def stops(
         bool, typer.Option("--refresh", help="Download the network again first.")
     ] = False,
 ) -> None:
-    """Find stop and station codes by name (ignores case and accents). Metro stations list one
-    code per line. Downloads the static network on first use and weekly after that."""
+    """Find stop and station codes by name, street or town (ignores case and accents). Metro
+    stations list one code per line. Only TMB's network: other operators' stops aren't listed.
+    Downloads the static network on first use and weekly after that."""
+
+    query = " ".join(words)
 
     def action() -> object:
         if bus_only and metro_only:

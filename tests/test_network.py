@@ -61,7 +61,7 @@ def test_download_keeps_codes_and_names_and_joins_interchanges(net):
         "code": "2",
         "name": "Av Inventada - Rambla Fictícia",
         "description": None,
-        "town": "Ciutat de Prova",
+        "town": "Vila Inventada",
     }
     assert [s.model_dump() for s in net.stations] == [
         {"name": "Prova", "codes": {"X8": "801", "X9": "901"}},
@@ -139,6 +139,18 @@ def test_search_matches_word_prefixes_abbreviations_and_codes(net):
 def test_position_prefers_names_that_start_with_the_query():
     assert network.position("catalunya", "Pl Catalunya - Portal de l'Àngel") == 1
     assert network.position("catalunya", "La Rambla - Pl Catalunya") == 3
+
+
+def test_search_matches_the_town_too(net):
+    assert _found(network.search(net, "carrer fals barcelona")) == []  # 1 and 3 aren't there
+    assert _found(network.search(net, "prova barcelona")) == ["4"]
+    assert _found(network.search(net, "rambla vila")) == ["2"]
+
+
+def test_cli_stops_takes_words_without_quotes(fake_api):
+    out = json.loads(runner.invoke(app, ["stops", "carrer", "fals"]).stdout)
+    assert out["query"] == "carrer fals"
+    assert [r["code"] for r in out["results"]] == ["3", "1"]  # 3 starts with it
 
 
 def test_search_filters_and_limit(net):

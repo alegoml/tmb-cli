@@ -69,7 +69,9 @@ tmb next casa            # next buses + whether you make it: "¿me da tiempo?"
 `stations`, each with its `arrivals` (plus `track`) and the station's `name` once the network is
 cached. Data: TMB, as of `updated_at`.
 
-`tmb stops <name>` searches bus stops and metro stations, ignoring case and accents. A metro
+`tmb stops <words>` searches bus stops and metro stations by name, street or town, ignoring case
+and accents (no quotes needed). It covers TMB's network only: buses run by other operators of the
+metropolitan area (e.g. TUSGSAL in Badalona) aren't listed. A metro
 station lists one code per line (`"codes": {"L1": "126", "L3": "326"}`): pass them all to
 `tmb metro`. The first run downloads the static network (13 requests) to
 `~/.cache/tmb-cli/network.json`; it refreshes weekly, or now with `--refresh`.

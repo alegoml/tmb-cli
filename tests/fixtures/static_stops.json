@@ -17,7 +17,7 @@
         "NOM_PARADA": "Pl de Prova - Carrer Fals",
         "DESC_PARADA": "Pl. Prova/Fals",
         "TIPIFICACIO_PARADA": "N",
-        "NOM_POBLACIO": "Ciutat de Prova",
+        "NOM_POBLACIO": "Vila Inventada",
         "DATA": "2026-01-01Z"
       }
     },
@@ -37,7 +37,7 @@
         "NOM_PARADA": "Av Inventada - Rambla Fictícia",
         "DESC_PARADA": null,
         "TIPIFICACIO_PARADA": "NXB",
-        "NOM_POBLACIO": "Ciutat de Prova",
+        "NOM_POBLACIO": "Vila Inventada",
         "DATA": "2026-01-01Z"
       }
     },
@@ -57,7 +57,7 @@
         "NOM_PARADA": "Carrer Fals - Final de trajecte",
         "DESC_PARADA": "Fals/Prova",
         "TIPIFICACIO_PARADA": "N",
-        "NOM_POBLACIO": "Ciutat de Prova",
+        "NOM_POBLACIO": "Vila Inventada",
         "DATA": "2026-01-02Z"
       }
     },
