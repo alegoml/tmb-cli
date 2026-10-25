@@ -37,7 +37,8 @@ entity[]                               ~650, all trip_update (no vehicle positio
 ```
 
 On 25/10/2026: 8920 stop time updates, 8768 with `arrival.time`, 0 with `delay`, 152 `SKIPPED`
-without times. Every RT `trip_id` was in the static `trips.txt`. Because times are absolute,
+without times. Predictions reach ~2 h ahead (up to 11 per stop), and 52 were already in the past
+(18 by more than 5 min: stops a bus had passed). Every RT `trip_id` was in the static `trips.txt`. Because times are absolute,
 **`stop_times.txt` is never needed**.
 
 ## Static network: `https://www.ambmobilitat.cat/OpenData/google_transit.zip` ✅

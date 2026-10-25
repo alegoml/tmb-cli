@@ -44,6 +44,7 @@ def test_bus_is_one_flat_list_by_time():
         "destination": "Destí de prova",
         "minutes": 3,
         "eta": "2026-01-01T01:03:50+01:00",
+        "operator": "TMB",
     }
     assert [(a["line"], a["minutes"], a["eta"][11:19]) for a in out["arrivals"]] == [
         ("X2", 0, "00:59:50"),  # already due

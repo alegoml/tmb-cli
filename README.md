@@ -1,17 +1,19 @@
 # tmb-cli
 
-Unofficial command-line client for **TMB** (Transports Metropolitans de Barcelona): real-time bus and
-metro arrivals from your terminal. Output is JSON, so shell pipelines (`jq`) and coding agents
-(Claude Code, Codex, Hermes…) can use it directly.
+Unofficial command-line client for Barcelona's real-time bus and metro arrivals: **TMB**
+(Transports Metropolitans de Barcelona: Barcelona's buses and metro) and **AMB**'s metropolitan
+buses run by other operators (TUSGSAL, Moventis, Monbus, Aerobús…). Output is JSON, so shell
+pipelines (`jq`) and coding agents (Claude Code, Codex, Hermes…) can use it directly.
 
-> **Status: work in progress (v0.1), not released yet.** Not affiliated with or endorsed by TMB.
-> Data: TMB's open API, credited in every response (`"source": "TMB"`, `updated_at`).
+> Not affiliated with or endorsed by TMB or AMB. Data: TMB's open API and AMB's open data,
+> credited in every response (`source`, `updated_at`).
 
 ## Requirements
 
 - Python 3.12+ and [uv](https://docs.astral.sh/uv/)
-- A free TMB API key: sign in at [developer.tmb.cat](https://developer.tmb.cat/), create an
-  application and copy its `app_id` and `app_key`.
+- A free TMB API key, for TMB's buses and the metro: sign in at
+  [developer.tmb.cat](https://developer.tmb.cat/), create an application and copy its `app_id` and
+  `app_key`. AMB's buses need no key.
 
 ## Install
 
@@ -57,21 +59,26 @@ tmb next casa            # next buses + whether you make it: "¿me da tiempo?"
 {
   "stop": {"code": "1103", "name": "Pl Catalunya - Portal de l'Àngel"},
   "arrivals": [
-    {"line": "V15", "destination": "Barceloneta", "minutes": 5, "eta": "2026-10-25T09:48:39+01:00"},
-    {"line": "H16", "destination": "Fòrum Campus Besòs", "minutes": 7, "eta": "2026-10-25T09:50:05+01:00"}
+    {"line": "V15", "destination": "Barceloneta", "minutes": 5, "eta": "2026-10-25T09:48:39+01:00", "operator": "TMB"},
+    {"line": "H16", "destination": "Fòrum Campus Besòs", "minutes": 7, "eta": "2026-10-25T09:50:05+01:00", "operator": "TMB"}
   ],
   "source": "TMB",
   "updated_at": "2026-10-25T09:42:54+01:00"
 }
 ```
 
-`minutes` is rounded down (3 min 50 s shows 3) and `eta` is Barcelona time. `metro` returns
-`stations`, each with its `arrivals` (plus `track`) and the station's `name` once the network is
-cached. Data: TMB, as of `updated_at`.
+`minutes` is rounded down (3 min 50 s shows 3) and `eta` is Barcelona time. Arrivals are the next
+two per line and destination. `metro` returns `stations`, each with its `arrivals` (plus `track`)
+and the station's `name` once the network is cached. Data: `source`, as of `updated_at`.
+
+`tmb bus` covers both networks with the same stop codes: at a stop TMB and AMB share it merges
+both (`"source": "TMB+AMB"`, each arrival with its `operator`); an AMB-only stop (e.g. in
+Badalona) needs no TMB key. AMB's line names come from its GTFS, cached in
+`~/.cache/tmb-cli/amb.json` (a ~9 MB download the first time and every few days, when AMB
+republishes it).
 
 `tmb stops <words>` searches bus stops and metro stations by name, street or town, ignoring case
-and accents (no quotes needed). It covers TMB's network only: buses run by other operators of the
-metropolitan area (e.g. TUSGSAL in Badalona) aren't listed. A metro
+and accents (no quotes needed), in TMB's and AMB's networks (`"network": "TMB"` or `"AMB"`). A metro
 station lists one code per line (`"codes": {"L1": "126", "L3": "326"}`): pass them all to
 `tmb metro`. The first run downloads the static network (13 requests) to
 `~/.cache/tmb-cli/network.json`; it refreshes weekly, or now with `--refresh`.
@@ -142,23 +149,31 @@ Tests never call the real API (they use `httpx.MockTransport`).
 
 ## Data and attribution
 
-Data: **Transports Metropolitans de Barcelona (TMB)**, from its open developer API
-([developer.tmb.cat](https://developer.tmb.cat/)), under TMB's
-[terms of use](https://developer.tmb.cat/docs/terms-conditions). The terms ask to cite TMB as the
-source together with the date of the last update, and not to alter the data. `tmb` does that in
-every response: `"source": "TMB"` and `updated_at` (TMB's own timestamp for real time, the
-dataset date for the stops list). `minutes`, `leave_in` and `make_it` are computed from TMB's
-times; names, lines and destinations are passed through as TMB publishes them.
+Data:
 
-Each user gets their own key and accepts TMB's terms. Register the application as `tmb-cli`. TMB
+- **Transports Metropolitans de Barcelona (TMB)**, from its open developer API
+  ([developer.tmb.cat](https://developer.tmb.cat/)), under TMB's
+  [terms of use](https://developer.tmb.cat/docs/terms-conditions).
+- **Àrea Metropolitana de Barcelona (AMB)**, from its open data (GTFS and GTFS-Realtime of the
+  metropolitan buses, publisher AMB Informació), under AMB's
+  [terms of use](https://www.amb.cat/web/area-metropolitana/dades-obertes/condicions-d-us)
+  (Llei 37/2007).
+
+Both ask to cite the source together with the date of the last update, and not to alter the data.
+`tmb` does that in every response: `source` (`"TMB"`, `"AMB"` or `"TMB+AMB"`) and `updated_at`
+(the source's own time for real time, the older one when there are two; the dataset dates for the
+stops list). `minutes`, `leave_in` and `make_it` are computed from the sources' times; names,
+lines and destinations are passed through as published.
+
+Each user gets their own TMB key and accepts TMB's terms. Register the application as `tmb-cli`. TMB
 may change the API or its terms without notice; if a response stops matching, `tmb` fails with
 `api_changed` (exit 7) instead of guessing.
 
 ## Disclaimer
 
-This project is not affiliated with or endorsed by Transports Metropolitans de Barcelona. It uses
-TMB's public developer API with your own credentials; you are responsible for complying with its
-terms of use.
+This project is not affiliated with or endorsed by Transports Metropolitans de Barcelona or the
+Àrea Metropolitana de Barcelona. It uses TMB's public developer API with your own credentials and
+AMB's open data; you are responsible for complying with their terms of use.
 
 ## License
 

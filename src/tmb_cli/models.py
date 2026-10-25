@@ -34,6 +34,7 @@ class WireBus(Wire):
 
 
 class WireBusRoute(Wire):
+    transit_namespace: str  # "bus" = TMB's line, "amb" = another AMB operator's
     nom_linia: str
     desti_trajecte: str
     propers_busos: list[WireBus]
@@ -138,6 +139,7 @@ class Arrival(Output):
     destination: str
     minutes: int
     eta: str
+    operator: str  # "TMB", or the AMB operator's name as AMB publishes it
 
 
 class MetroArrival(Output):
@@ -177,7 +179,8 @@ class BusStopResult(Output):
     code: str
     name: str
     description: str | None
-    town: str
+    town: str | None
+    network: str  # "TMB" or "AMB" (an AMB-only stop: no TMB keys needed)
 
 
 class StationResult(Output):
@@ -190,7 +193,7 @@ class StopSearch(Output):
     query: str
     results: list[BusStopResult | StationResult]
     source: str = "TMB"
-    updated_at: str  # TMB's dataset date of the cached network
+    updated_at: str  # the older dataset date of the cached networks
 
 
 # --- `tmb next`: arrivals plus whether the user can catch them ----------------------

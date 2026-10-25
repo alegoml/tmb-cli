@@ -15,8 +15,10 @@ answer things like "¿me da tiempo a pillar el V15?". Inspired by
 - `src/tmb_cli/cli.py` commands · `client.py` TMB API client · `config.py` credentials ·
   `errors.py` typed errors + exit codes · `output.py` JSON to stdout/stderr ·
   `models.py` `Wire*` (TMB responses) and output models · `arrivals.py` TMB → our output ·
-  `network.py` static network cache + name search · `favourites.py` favourites file.
-- `tests/` offline tests only; synthetic responses in `tests/fixtures/`.
+  `network.py` static network cache + name search · `favourites.py` favourites file ·
+  `amb.py` AMB's GTFS cache + GTFS-Realtime parsing.
+- `tests/` offline tests only; synthetic responses in `tests/fixtures/`; `conftest.py` gives every
+  test an isolated cache and a fake AMB (synthetic GTFS zip and GTFS-RT feed built in code).
 
 ## Commands
 ```bash
@@ -34,7 +36,7 @@ uv run ruff check . && uv run ruff format .
    exception into the JSON error (unknown ones by type only).
 2. **Credentials are secret.** Never print, log, commit or put `app_id`/`app_key` in error
    messages, fixtures or test names. The request URL contains them: don't echo it.
-3. **Tests never hit the network.** Use `httpx.MockTransport`. Real responses go only in
+3. **Tests never hit the network.** Use `httpx.MockTransport` or the fakes in `conftest.py`. Real responses go only in
    `captures/` (git-ignored, never committed) and are used to learn the response shape.
    `tests/fixtures/` holds **synthetic** responses: the same structure and field names as a real
    capture, but made-up values (lines like `X1`, stops like `0001`, names like "Destí de prova").
@@ -145,8 +147,10 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
    - [ ] README demo (3-step key signup) + 15 s human-vs-agent video → post
    - [-] `--format pretty` for humans: not in v1 (D9)
 10. - [x] AMB docs: `docs/amb-api.md`, rule 4 widened, spec section "AMB" (D11–D13)
-    - [ ] AMB in code: GTFS-RT + static cache, `tmb bus` merges TMB and AMB with `operator`,
-      `stops` lists AMB-only stops, `doctor`, SKILL.md/README; then announce (video, post)
+    - [x] AMB in code: GTFS-RT + static cache, `tmb bus` merges TMB and AMB with `operator`,
+      `stops` lists AMB-only stops, `doctor`, SKILL.md/README
+    - [ ] Alex checks a shared stop with his keys (and a TMB capture of one, e.g. 916, to see
+      whether TMB lists AMB lines too); release v0.2.0; then announce (video, post)
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
 Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API

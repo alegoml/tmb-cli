@@ -11,8 +11,8 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from tmb_cli import __version__, arrivals, favourites, network
-from tmb_cli.client import TmbClient
+from tmb_cli import __version__, amb, arrivals, favourites, network
+from tmb_cli.client import AmbClient, TmbClient
 from tmb_cli.config import (
     ENV_APP_ID,
     ENV_APP_KEY,
@@ -166,17 +166,46 @@ def auth_status() -> None:
 # --- arrivals -------------------------------------------------------------------
 
 
+def _amb_client() -> AmbClient:
+    return AmbClient()
+
+
+AMB_RETRY_AFTER_SECONDS = 3600  # don't re-download AMB's zip more than hourly for unknown trips
+
+
 def _bus(stop: str, lines: list[str]) -> BusArrivals:
+    """TMB and AMB real time for one stop code, merged (spec "AMB"). TMB is asked unless the
+    stop is AMB-only, so an AMB-only stop needs no TMB keys."""
     _check_codes("Stop", [stop])
-    with _client() as client:
-        payload = client.bus_arrivals(stop)
-    result = arrivals.bus_arrivals(payload, stop, lines)
-    # TMB answers an unknown stop like one with no data: only the cache can tell them apart.
-    cached = network.load_cached() if result.stop.name is None else None
-    if cached and not cached.has_stop(str(int(stop))):
+    code = str(int(stop))
+    tmb_net = network.load_cached()  # never downloaded here: names and codes only
+    amb_net = amb.get_cache(_amb_client)  # downloaded when needed: AMB lines come from it (D13)
+    amb_stop = amb_net.stops.get(code)
+    tmb_lists = tmb_net.has_stop(code) if tmb_net else None
+    # Without TMB's list, AMB's zero-padded ids ("001103") mark the stops that are TMB's too.
+    amb_only = amb_stop is not None and (
+        tmb_lists is False or (tmb_lists is None and not amb_stop.padded)
+    )
+
+    parts = []
+    if not amb_only:
+        with _client() as client:
+            payload = client.bus_arrivals(stop)
+        parts.append(arrivals.tmb_bus(payload, lines, drop_other_operators=amb_stop is not None))
+    if amb_stop is not None:
+        with _amb_client() as client:
+            feed = amb.parse_realtime(client.realtime())
+        part, unknown = arrivals.amb_bus(feed, amb_net, code, lines)
+        if unknown and time.time() - amb_net.downloaded_at > AMB_RETRY_AFTER_SECONDS:
+            amb_net = amb.get_cache(_amb_client, refresh=True)  # new trip ids: AMB republished
+            part, _ = arrivals.amb_bus(feed, amb_net, code, lines)
+        parts.append(part)
+
+    result = arrivals.combine(stop, parts)
+    # TMB answers an unknown stop like one with no data: only the stop lists can tell them apart.
+    if result.stop.name is None and amb_stop is None and tmb_lists is False:
         raise NotFound(
-            f"{stop} is not a TMB bus stop.",
-            hint="Find TMB stops with `tmb stops <name>`; other operators' stops aren't covered.",
+            f"{stop} is not a TMB or AMB bus stop.", hint="Find stops with `tmb stops <name>`."
         )
     return result
 
@@ -276,17 +305,21 @@ def fav_add(
         _check_codes("Station" if metro_codes else "Stop", codes)
         if not metro_codes and len(codes) > 1:
             raise UsageError("A bus favourite has one stop code.", hint="For metro, add --metro.")
-        cached = network.load_cached()  # check the codes when we can; never download for this
-        if cached:
-            for code in codes:
-                known = (
-                    cached.station_name(str(int(code)))
-                    if metro_codes
-                    else cached.has_stop(str(int(code)))
+        # Check the codes when the lists are cached; never download for this.
+        tmb_net, amb_net = network.load_cached(), amb.load_cached()
+        for code in (str(int(c)) for c in codes):
+            if metro_codes:
+                unknown = tmb_net is not None and not tmb_net.station_name(code)
+            else:  # a bus stop can be TMB's or AMB's: only both lists can rule it out
+                unknown = (
+                    tmb_net is not None
+                    and amb_net is not None
+                    and not tmb_net.has_stop(code)
+                    and code not in amb_net.stops
                 )
-                if not known:
-                    kind = "metro station" if metro_codes else "bus stop"
-                    raise NotFound(f"No {kind} {code}.", hint="Find it with `tmb stops <name>`.")
+            if unknown:
+                kind = "metro station" if metro_codes else "bus stop"
+                raise NotFound(f"No {kind} {code}.", hint="Find it with `tmb stops <name>`.")
         fav = Favourite(
             name=name,
             type="metro" if metro_codes else "bus",
@@ -343,8 +376,17 @@ def stops(
         if not network.normalize(query):
             raise UsageError("The query needs at least one letter or digit.")
         net = network.get_network(_client, refresh=refresh)
-        results = network.search(net, query, bus=not metro_only, metro=not bus_only, limit=limit)
-        return StopSearch(query=query, results=results, updated_at=net.updated_at).model_dump()
+        amb_net = None if metro_only else amb.get_cache(_amb_client, refresh=refresh)
+        results = network.search(
+            net, query, amb=amb_net, bus=not metro_only, metro=not bus_only, limit=limit
+        )
+        dates = [net.updated_at] + ([amb_net.updated_at] if amb_net else [])
+        return StopSearch(
+            query=query,
+            results=results,
+            source="TMB+AMB" if amb_net else "TMB",
+            updated_at=min(dates),
+        ).model_dump()
 
     _run(action)
 
@@ -397,12 +439,27 @@ def _doctor_checks() -> list[dict]:
         except TmbError as err:
             checks.append(_check("api", False, err.message, err))
 
+    try:
+        with _amb_client() as client:
+            feed = amb.parse_realtime(client.realtime())
+        detail = f"AMB real-time feed answered ({len(feed.passages)} stops with buses)."
+        checks.append(_check("amb", True, detail))
+    except TmbError as err:
+        checks.append(_check("amb", False, err.message, err))
+
     cached = network.load_cached()
     if cached is None:
         checks.append(_check("cache", True, "Not downloaded yet: `tmb stops <name>` does it."))
     else:
         days = int((time.time() - cached.downloaded_at) // 86400)
         checks.append(_check("cache", True, f"{days} days old, TMB data of {cached.updated_at}"))
+    amb_cached = amb.load_cached()
+    if amb_cached is None:
+        checks.append(_check("amb_cache", True, "Not downloaded yet: `tmb stops` or `tmb bus`."))
+    else:
+        days = int((time.time() - amb_cached.downloaded_at) // 86400)
+        detail = f"{days} days old, AMB data valid until {amb_cached.valid_until}"
+        checks.append(_check("amb_cache", True, detail))
 
     try:
         count = len(favourites.load().favourites)

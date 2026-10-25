@@ -1,11 +1,12 @@
 ---
 name: tmb
-description: Real-time TMB (Barcelona) bus and metro arrivals with the `tmb` CLI. Use when the user asks when a bus or metro comes, whether they can catch it ("¿me da tiempo?", "¿cuándo pasa el V15?"), when to leave, or for a stop or station code.
+description: Real-time Barcelona bus and metro arrivals (TMB, plus AMB's metropolitan buses) with the `tmb` CLI. Use when the user asks when a bus or metro comes, whether they can catch it ("¿me da tiempo?", "¿cuándo pasa el V15?"), when to leave, or for a stop or station code.
 ---
 
 # tmb: Barcelona bus and metro arrivals
 
-`tmb` answers from TMB's official API. Every command prints JSON on stdout; errors are one line of
+`tmb` answers from TMB's official API (Barcelona's buses and metro) and AMB's open data (the
+metropolitan buses of other operators: TUSGSAL, Moventis, Monbus…). One stop code works for both. Every command prints JSON on stdout; errors are one line of
 JSON on stderr with a stable exit code. Always pass `--no-input` (before or after the command), so
 it never waits for a prompt.
 
@@ -51,22 +52,22 @@ Ask the user for the stop (name or code) and how many minutes they walk to it, t
 
 1. Find the code: `tmb --no-input stops <words>` (name, street or town). Bus results have `code`
    and `town`; metro results have `codes`, one per line (`{"L1": "126", "L3": "326"}`). If several
-   match, ask. No results can mean the stop belongs to another operator (e.g. most buses in
-   Badalona are TUSGSAL's): `tmb` only covers TMB's network, so say so and suggest a nearby metro
-   station or a TMB stop instead.
+   match, ask. Bus results carry `network`: `"AMB"` stops need no TMB keys. Rail other than the
+   metro (Rodalies, FGC, tram) isn't covered: say so.
 2. Save it: `tmb --no-input fav add casa 1103 --walk 4`, or for a station with all its lines
    `tmb --no-input fav add feina 126 326 --metro --walk 5`. Names: lowercase, start with a letter.
 
 ## Output
 
-- `minutes`: whole minutes from TMB's query time, rounded down (3 min 50 s is 3). `eta`: arrival
+- `minutes`: whole minutes from the data's own time, rounded down (3 min 50 s is 3). `eta`: arrival
   time in Barcelona time, ISO 8601.
-- `arrivals` is sorted by time. An empty list means TMB has no prediction right now (e.g. at
+- `arrivals` is sorted by time, at most the next 2 per line and destination. Bus arrivals carry
+  `operator` ("TMB", "DIREXIS TUSGSAL"…). An empty list means no prediction right now (e.g. at
   night), not an error.
 - Metro arrivals carry `track` (1 or 2, the two directions). Real-time station codes are per line:
   pass every code of an interchange to see all its lines.
-- `source` and `updated_at`: TMB's data and when it was produced. Mention that it comes from TMB
-  if you show the data to others.
+- `source` (`"TMB"`, `"AMB"` or `"TMB+AMB"`) and `updated_at`: whose data it is and when it was
+  produced (the older time when there are two). Mention the source if you show the data to others.
 - Real-time data changes every few seconds: run the command again rather than reusing an old
   answer.
 
@@ -76,10 +77,10 @@ Ask the user for the stop (name or code) and how many minutes they walk to it, t
 |---|---|---|
 | 2 | `usage` | Fix the command (the message says what's wrong). |
 | 3 | `missing_credentials`, `auth_failed` | Ask the user to run `tmb auth set` **in their own terminal**. Never ask for, read, print or pass the keys yourself. |
-| 4 | `not_found` | Unknown stop, station or favourite, or another operator's stop (TMB has no data for those): search with `tmb stops`, or check `tmb fav list`. |
+| 4 | `not_found` | Unknown stop, station or favourite: search with `tmb stops`, or check `tmb fav list`. |
 | 5 | `rate_limited`, `api_error` | If `retryable` is `true`, wait a little and retry once. |
-| 6 | `network_error` | Retry once; then tell the user TMB can't be reached. |
-| 7 | `api_changed` | TMB changed its API: tell the user; retrying won't help. |
+| 6 | `network_error` | Retry once; then tell the user TMB or AMB can't be reached. |
+| 7 | `api_changed` | TMB or AMB changed its data: tell the user; retrying won't help. |
 
 ## Don't
 

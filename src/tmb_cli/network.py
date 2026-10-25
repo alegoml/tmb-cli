@@ -11,10 +11,14 @@ import time
 import unicodedata
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ValidationError
 
 from tmb_cli.client import TmbClient
+
+if TYPE_CHECKING:  # amb.py imports this module
+    from tmb_cli.amb import AmbCache
 from tmb_cli.models import (
     BusStopResult,
     StationResult,
@@ -194,8 +198,16 @@ def position(query: str, name: str) -> int:
 
 
 def search(
-    network: Network, query: str, *, bus: bool = True, metro: bool = True, limit: int = 10
+    network: Network,
+    query: str,
+    *,
+    amb: "AmbCache | None" = None,
+    bus: bool = True,
+    metro: bool = True,
+    limit: int = 10,
 ) -> list[BusStopResult | StationResult]:
+    """TMB's stops and stations, plus AMB-only stops when `amb` is given (a stop both list is
+    TMB's; out-of-service AMB stops are left out)."""
     q = normalize(query)
     found: list[tuple[int, int, int, str, BusStopResult | StationResult]] = []
     if metro:
@@ -209,7 +221,24 @@ def search(
             if r is not None:
                 group = 1 if stop.town == "Barcelona" else 2  # most TMB stops and users
                 where = position(q, stop.name)
-                found.append((r, group, where, stop.name, BusStopResult(**stop.model_dump())))
+                result = BusStopResult(**stop.model_dump(), network="TMB")
+                found.append((r, group, where, stop.name, result))
+        tmb_codes = {stop.code for stop in network.stops}
+        for code, amb_stop in amb.stops.items() if amb else []:
+            if code in tmb_codes or not amb_stop.in_service:
+                continue
+            r = 0 if q == code else rank(q, amb_stop.name, None, amb_stop.town)
+            if r is not None:
+                group = 1 if amb_stop.town == "Barcelona" else 2
+                where = position(q, amb_stop.name)
+                result = BusStopResult(
+                    code=code,
+                    name=amb_stop.name,
+                    description=None,
+                    town=amb_stop.town,
+                    network="AMB",
+                )
+                found.append((r, group, where, amb_stop.name, result))
     # Rank; then metro, Barcelona bus stops, other towns' bus stops; then where the query starts
     # in the name; then the name.
     found.sort(key=lambda item: item[:4])

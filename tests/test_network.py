@@ -182,10 +182,11 @@ def test_cli_stops(fake_api):
                 "name": "Pl de Prova - Carrer Inventat",
                 "description": "Pl. Prova/Inventat",
                 "town": "Barcelona",
+                "network": "TMB",
             },
         ],
-        "source": "TMB",
-        "updated_at": "2026-01-02",
+        "source": "TMB+AMB",
+        "updated_at": "2026-01-01",  # the older of TMB's (01-02) and AMB's (01-01) dates
     }
 
 

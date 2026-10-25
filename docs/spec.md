@@ -219,15 +219,17 @@ as published ("DIREXIS TUSGSAL", "Moventis"…) for AMB's. Which sources a call 
 
 - **AMB** when the AMB stop list (cached, see below) has the code. Its line names and
   destinations come from that cache (`trip_id` → `routes`/`trips`).
-- **TMB** when the code isn't AMB-only (in AMB's list without a TMB-padded counterpart in TMB's
-  list) and keys are set. An AMB-only stop needs no keys; any other stop without keys is still
-  `missing_credentials`.
+- **TMB** unless the stop is AMB-only: in AMB's list and not in TMB's cached list (without TMB's
+  list: AMB's id isn't zero-padded, since AMB pads TMB's codes, `001103`). An AMB-only stop needs
+  no keys; any other stop without keys is still `missing_credentials`.
 - Both answers are merged into one list sorted by time (D2). If TMB's answer lists other
   operators' lines (`transit_namespace: "amb"`) and AMB answered too, those TMB entries are dropped
   so a bus never appears twice; AMB's own feed is the reference for its buses.
 - `stop.name`: TMB's `nom_parada`, else AMB's `stop_name`. `not_found` when neither TMB nor
   either cached stop list knows the code.
 - `minutes`: from each source's own query time (TMB's `timestamp`, AMB's `header.timestamp`).
+- AMB predicts up to ~2 h ahead and keeps some stops a bus already passed. We drop passages more
+  than a minute old and keep the next 2 per line and destination, as TMB answers (25/10/2026).
 
 - **D12. `source` and `updated_at` with two sources?** **Decided (implementation choice, for Alex
   to review)**: `source` stays a string, `"TMB"`, `"AMB"` or `"TMB+AMB"`, and `updated_at` is the
@@ -240,7 +242,8 @@ as published ("DIREXIS TUSGSAL", "Moventis"…) for AMB's. Which sources a call 
 own schedule: AMB republishes its GTFS every few days with new trip ids. It keeps stops (code, name,
 town, in service), lines (`route_id` → name, operator) and trips (`trip_id` → line, headsign).
 Refreshed when the feed's `feed_end_date` has passed, when older than 7 days, or once per command
-when the real-time feed names a trip at the asked stop that the cache doesn't know.
+when the real-time feed names a trip at the asked stop that the cache doesn't know (at most hourly,
+so a feed with a stray trip id doesn't cost 9 MB per call).
 
 - **D13. Can `tmb bus` download the AMB cache?** **Decided (implementation choice, for Alex to
   review)**: yes, unlike TMB's network cache. Without it AMB arrivals have no line or destination

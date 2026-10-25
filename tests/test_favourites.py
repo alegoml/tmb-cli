@@ -2,9 +2,10 @@ import json
 from pathlib import Path
 
 import pytest
+from conftest import FakeAmb
 from typer.testing import CliRunner
 
-from tmb_cli import cli, network
+from tmb_cli import amb, cli, network
 from tmb_cli.cli import app
 from tmb_cli.favourites import favourites_path
 
@@ -84,7 +85,10 @@ def test_a_bus_favourite_has_one_stop():
 def test_add_checks_codes_against_the_cache_when_there_is_one():
     ok("fav", "add", "casa", "9", "--walk", "4")  # no cache: can't check, accepted
     network.save(network.download(FakeStatic()))
+    ok("fav", "add", "casa", "9", "--walk", "4")  # TMB's list only: it may be an AMB stop
+    amb.get_cache(FakeAmb)
     assert error("fav", "add", "casa", "9", "--walk", "4") == (4, "not_found")
+    ok("fav", "add", "bufala", "100001", "--walk", "4")  # an AMB-only stop
     assert error("fav", "add", "feina", "999", "--walk", "4", "--metro") == (4, "not_found")
     ok("fav", "add", "feina", "901", "801", "--walk", "4", "--metro")
 
@@ -113,6 +117,7 @@ def test_next_from_a_favourite(fake_api):
         "destination",
         "minutes",
         "eta",
+        "operator",
         "make_it",
         "leave_in",
     ]
