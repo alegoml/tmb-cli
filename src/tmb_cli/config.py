@@ -61,7 +61,7 @@ def load_credentials() -> Credentials:
         raise MissingCredentials(
             "No TMB API credentials found.",
             hint=f"Run `tmb auth set` or export {ENV_APP_ID} and {ENV_APP_KEY}. "
-            "Free keys: https://developer.tmb.cat/",
+            "Free keys, step by step: https://github.com/alegoml/tmb-cli#get-your-tmb-keys-about-2-minutes",
         )
     return creds
 

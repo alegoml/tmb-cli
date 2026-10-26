@@ -11,9 +11,8 @@ pipelines (`jq`) and coding agents (Claude Code, Codex, Hermes…) can use it di
 ## Requirements
 
 - Python 3.12+ and [uv](https://docs.astral.sh/uv/)
-- A free TMB API key, for TMB's buses and the metro: sign in at
-  [developer.tmb.cat](https://developer.tmb.cat/), create an application and copy its `app_id` and
-  `app_key`. AMB's buses need no key.
+- A free TMB API key, for TMB's buses and the metro: see
+  [Get your TMB keys](#get-your-tmb-keys-about-2-minutes). AMB's buses need no key.
 
 ## Install
 
@@ -34,6 +33,35 @@ git clone https://github.com/alegoml/tmb-cli && cd tmb-cli
 uv sync
 uv run tmb --help
 ```
+
+## Get your TMB keys (about 2 minutes)
+
+TMB's buses and the metro need your own free key; AMB's metropolitan buses work without one, so
+you can skip this if you only use those.
+
+1. **Sign up** at [developer.tmb.cat](https://developer.tmb.cat/) and log in.
+2. **Create an application** ("Nueva aplicación"):
+   - *Nombre de la aplicación*: `tmb-cli` (TMB's terms tie the key to the application you declare).
+   - *Descripción*: for example `Unofficial open-source command-line client that shows real-time
+     TMB bus and metro arrivals, for personal use and for coding agents. Read-only. Data credited
+     to TMB.`
+   - *URL de acceso*: leave it empty, or use `https://github.com/alegoml/tmb-cli` if the form
+     wants one.
+   - Read and accept the terms, then *Finalizar*.
+3. **Save the keys** shown on the application's page, in your own terminal:
+
+   ```bash
+   tmb auth set      # asks for app_id, then app_key (hidden while you paste it)
+   tmb doctor        # "api": ok means the keys work
+   ```
+
+   Copy each value on its own: if `doctor` says `auth_failed`, the usual cause is extra text
+   pasted with the `app_key`. Run `tmb auth set` again.
+
+Keep the keys to yourself, and **never paste them into an agent's chat**: that's what `tmb auth set`
+is for. If your agent runs somewhere you can't open a terminal (a phone app, a cloud sandbox), use
+its secrets or environment settings for `TMB_APP_ID` and `TMB_APP_KEY`, or create a second
+application just for it, so you can delete that one if it leaks.
 
 ## Credentials
 

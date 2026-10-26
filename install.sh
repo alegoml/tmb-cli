@@ -20,6 +20,8 @@ cat >&2 <<EOF
 
 tmb ${VERSION} installed. Next:
   1. Get free keys at https://developer.tmb.cat/ (create an application named tmb-cli).
+     Step by step: https://github.com/alegoml/tmb-cli#get-your-tmb-keys-about-2-minutes
+     (AMB's metropolitan buses work without keys.)
   2. Run \`tmb auth set\` in your terminal (never paste the keys into an agent).
   3. Check it: tmb doctor
 EOF
