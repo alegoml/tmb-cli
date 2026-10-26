@@ -62,10 +62,12 @@ def test_download_keeps_codes_and_names_and_joins_interchanges(net):
         "name": "Av Inventada - Rambla Fictícia",
         "description": None,
         "town": "Vila Inventada",
+        "lat": 41.003,
+        "lon": 2.0,
     }
     assert [s.model_dump() for s in net.stations] == [
-        {"name": "Prova", "codes": {"X8": "801", "X9": "901"}},
-        {"name": "Estació Inventada", "codes": {"X9": "902"}},
+        {"name": "Prova", "codes": {"X8": "801", "X9": "901"}, "lat": 41.0008, "lon": 1.9995},
+        {"name": "Estació Inventada", "codes": {"X9": "902"}, "lat": 41.02, "lon": 2.0},
     ]
     assert net.station_name("801") == "Prova"
     assert net.station_name("999") is None

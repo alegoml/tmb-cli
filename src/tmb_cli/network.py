@@ -30,7 +30,7 @@ from tmb_cli.models import (
 
 ENV_CACHE_DIR = "TMB_CLI_CACHE_DIR"  # override, mainly for tests
 MAX_AGE_SECONDS = 7 * 24 * 3600
-CACHE_VERSION = 2  # bump when the cached fields change: old caches are downloaded again
+CACHE_VERSION = 3  # bump when the cached fields change: old caches are downloaded again
 
 
 class CachedStop(BaseModel):
@@ -38,11 +38,15 @@ class CachedStop(BaseModel):
     name: str
     description: str | None
     town: str
+    lat: float
+    lon: float
 
 
 class CachedStation(BaseModel):
     name: str
     codes: dict[str, str]  # line → real-time code
+    lat: float  # of the first line's station seen: an interchange's lines are metres apart
+    lon: float
 
 
 class Network(BaseModel):
@@ -108,8 +112,10 @@ def download(client: TmbClient) -> Network:
         for feature in stations.features:
             props = feature.properties
             dates.add(props.DATA)
+            lon, lat = feature.geometry.coordinates
             station = groups.setdefault(
-                props.CODI_GRUP_ESTACIO, CachedStation(name=props.NOM_ESTACIO, codes={})
+                props.CODI_GRUP_ESTACIO,
+                CachedStation(name=props.NOM_ESTACIO, codes={}, lat=lat, lon=lon),
             )
             station.codes[props.NOM_LINIA] = str(props.CODI_ESTACIO)
 
@@ -122,12 +128,17 @@ def download(client: TmbClient) -> Network:
                 name=f.properties.NOM_PARADA,
                 description=f.properties.DESC_PARADA,
                 town=f.properties.NOM_POBLACIO,
+                lat=f.geometry.coordinates[1],
+                lon=f.geometry.coordinates[0],
             )
             for f in stops.features
         ],
         stations=[
             CachedStation(
-                name=s.name, codes=dict(sorted(s.codes.items(), key=lambda c: line_order(c[0])))
+                name=s.name,
+                codes=dict(sorted(s.codes.items(), key=lambda c: line_order(c[0]))),
+                lat=s.lat,
+                lon=s.lon,
             )
             for s in groups.values()
         ],

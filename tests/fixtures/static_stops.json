@@ -8,7 +8,7 @@
         "type": "Point",
         "coordinates": [
           2.0,
-          41.0
+          41.001
         ]
       },
       "properties": {
@@ -28,7 +28,7 @@
         "type": "Point",
         "coordinates": [
           2.0,
-          41.0
+          41.003
         ]
       },
       "properties": {
@@ -48,7 +48,7 @@
         "type": "Point",
         "coordinates": [
           2.0,
-          41.0
+          41.01
         ]
       },
       "properties": {
@@ -67,8 +67,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          2.0,
-          41.0
+          2.0005,
+          41.0005
         ]
       },
       "properties": {

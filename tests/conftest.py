@@ -29,9 +29,9 @@ GTFS_FILES = {
     "900,s1,900.1.1,1,Destí de prova\n"
     "900,s1,900.1.2,0,Altre destí\n",
     "stops.txt": "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,out_of_service\n"
-    '100001,100001,"Parada AMB de prova",Pal,41.0,2.0,0\n'
-    '100002,100002,"Parada AMB tancada",Pal,41.0,2.0,1\n'
-    '000005,5,"Parada compartida de prova",Marquesina,41.0,2.0,0\n',
+    '100001,100001,"Parada AMB de prova",Pal,41.0015,2.0010,0\n'
+    '100002,100002,"Parada AMB tancada",Pal,41.0002,2.0000,1\n'
+    '000005,5,"Parada compartida de prova",Marquesina,41.0500,2.0000,0\n',
     # Never read by tmb-cli, but present in the real zip.
     "stop_times.txt": "trip_id,arrival_time,departure_time,stop_id,stop_sequence\n",
 }

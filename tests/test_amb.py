@@ -48,6 +48,8 @@ def test_parse_static_keeps_stops_lines_and_trips():
         "town": "Vila Inventada",  # trailing tab stripped
         "padded": False,
         "in_service": True,
+        "lat": 41.0015,
+        "lon": 2.001,
     }
     assert cache.stops["5"].padded is True  # "000005": a TMB stop code too
     assert cache.stops["100002"].in_service is False

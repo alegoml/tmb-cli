@@ -90,7 +90,12 @@ class WireStopProps(Wire):
     DATA: str  # dataset date, "2026-10-24Z"
 
 
+class WirePoint(Wire):
+    coordinates: tuple[float, float]  # GeoJSON order: (lon, lat), EPSG:4326
+
+
 class WireStopFeature(Wire):
+    geometry: WirePoint
     properties: WireStopProps
 
 
@@ -120,6 +125,7 @@ class WireStationProps(Wire):
 
 
 class WireStationFeature(Wire):
+    geometry: WirePoint
     properties: WireStationProps
 
 

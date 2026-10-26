@@ -23,7 +23,7 @@ from tmb_cli.errors import ApiChanged
 from tmb_cli.network import cache_dir
 
 MAX_AGE_SECONDS = 7 * 24 * 3600
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 CHANGED_HINT = "AMB may have changed its open data; please open an issue."
 
 
@@ -32,6 +32,8 @@ class AmbStop(BaseModel):
     town: str | None  # AMB's areas cover about 3 in 4 stops
     padded: bool  # stop_id zero-padded ("001103"): AMB's id for a TMB stop code
     in_service: bool
+    lat: float
+    lon: float
 
 
 class AmbCache(BaseModel):
@@ -91,6 +93,8 @@ def parse_static(content: bytes) -> AmbCache:
                 town=stop_town.get(r["stop_id"]),
                 padded=r["stop_id"].startswith("0"),
                 in_service=r.get("out_of_service", "0") != "1",
+                lat=float(r["stop_lat"]),
+                lon=float(r["stop_lon"]),
             )
             for r in _rows(archive, "stops.txt")
         }
