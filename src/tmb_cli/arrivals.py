@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from tmb_cli import say
 from tmb_cli.amb import AmbCache, Feed
 from tmb_cli.models import (
     Arrival,
@@ -116,9 +117,16 @@ def amb_bus(feed: Feed, cache: AmbCache, code: str, lines: list[str]) -> tuple[B
 def combine(stop_code: str, parts: list[BusPart]) -> BusArrivals:
     """One answer from one or two sources: one list by time (D2), the first source's stop name,
     `source` "TMB", "AMB" or "TMB+AMB", and the older source's time as `updated_at` (D12)."""
+    name = next((p.name for p in parts if p.name), None)
+    found = _by_time([pair for part in parts for pair in part.timed])
     return BusArrivals(
-        stop=Stop(code=stop_code, name=next((p.name for p in parts if p.name), None)),
-        arrivals=_by_time([pair for part in parts for pair in part.timed]),
+        stop=Stop(code=stop_code, name=name),
+        arrivals=found,
+        say=say.arrivals(
+            name or stop_code,
+            [(a.line, a.minutes) for a in found],
+            none=f"Ahora mismo no hay previsiones en {name or 'la parada ' + stop_code}.",
+        ),
         source="+".join(part.source for part in parts),
         updated_at=clock(min(part.timestamp_ms for part in parts)),
     )
@@ -157,10 +165,19 @@ def metro_arrivals(
                     by_station.setdefault(station.codi_estacio, []).append(
                         (train.temps_arribada, arrival)
                     )
+    stations = [
+        Station(code=str(code), name=station_name(str(code)), arrivals=_by_time(timed))
+        for code, timed in by_station.items()
+    ]
     return MetroArrivals(
-        stations=[
-            Station(code=str(code), name=station_name(str(code)), arrivals=_by_time(timed))
-            for code, timed in by_station.items()
-        ],
+        stations=stations,
+        say=" ".join(
+            say.arrivals(
+                s.name or f"Estación {s.code}",
+                [(a.line, a.minutes) for a in s.arrivals],
+                none=f"{s.name or s.code}: sin previsiones.",
+            )
+            for s in stations
+        ),
         updated_at=clock(wire.timestamp),
     )

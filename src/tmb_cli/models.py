@@ -164,6 +164,7 @@ class Stop(Output):
 class BusArrivals(Output):
     stop: Stop
     arrivals: list[Arrival]
+    say: str = ""
     source: str = "TMB"
     updated_at: str
 
@@ -176,6 +177,7 @@ class Station(Output):
 
 class MetroArrivals(Output):
     stations: list[Station]
+    say: str = ""
     source: str = "TMB"
     updated_at: str
 
