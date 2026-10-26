@@ -151,7 +151,8 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
       `stops` lists AMB-only stops, `doctor`, SKILL.md/README
     - [x] Shared stop checked with real keys (916, 26/10/2026): TMB lists AMB lines too, merged
       without duplicates
-    - [ ] Release v0.2.0; then announce (video, post)
+    - [x] Release v0.2.0 (26/10/2026)
+    - [ ] Announce: README demo, 15 s video, post
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
 Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API

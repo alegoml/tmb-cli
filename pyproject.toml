@@ -1,6 +1,6 @@
 [project]
 name = "tmb-cli"
-version = "0.1.0"
+version = "0.2.0"
 description = "Unofficial, agent-friendly CLI for Barcelona's TMB bus and metro arrival times"
 readme = "README.md"
 license = "MIT"
