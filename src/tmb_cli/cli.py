@@ -11,7 +11,7 @@ from typing import Annotated, NoReturn
 
 import typer
 
-from tmb_cli import __version__, amb, arrivals, favourites, network
+from tmb_cli import __version__, amb, arrivals, favourites, nearby, network, places, say
 from tmb_cli.client import AmbClient, TmbClient
 from tmb_cli.config import (
     ENV_APP_ID,
@@ -39,6 +39,11 @@ fav_app = typer.Typer(
     help="Favourite stops and stations, with your walk time to them.", no_args_is_help=True
 )
 app.add_typer(fav_app, name="fav")
+place_app = typer.Typer(
+    help="Your usual places (home, work…) with their nearby stops and walk times.",
+    no_args_is_help=True,
+)
+app.add_typer(place_app, name="place")
 skills_app = typer.Typer(help="The guide for coding agents (SKILL.md).", no_args_is_help=True)
 app.add_typer(skills_app, name="skills")
 
@@ -344,6 +349,92 @@ def fav_remove(name: Annotated[str, typer.Argument(help="The favourite's name.")
 
     def action() -> object:
         favourites.remove(name)
+        return {"removed": name}
+
+    _run(action)
+
+
+# --- places -------------------------------------------------------------------------
+
+
+def _networks(refresh: bool = False) -> tuple["network.Network | None", "amb.AmbCache"]:
+    """Both stop lists. Without TMB keys, TMB's is whatever is cached (maybe none): AMB's
+    metropolitan buses still work."""
+    try:
+        tmb_net = network.get_network(_client, refresh=refresh)
+    except MissingCredentials:
+        tmb_net = network.load_cached()
+    return tmb_net, amb.get_cache(_amb_client, refresh=refresh)
+
+
+def _point(text: str) -> tuple[float, float]:
+    point = nearby.parse_point(text)
+    if point is None:
+        raise UsageError(
+            f"`{text}` is not a lat,lon point.", hint="For example 41.3874,2.1700 (lat first)."
+        )
+    return point
+
+
+@place_app.command("add")
+def place_add(
+    name: Annotated[str, typer.Argument(help="Lowercase name, e.g. casa.")],
+    point: Annotated[str, typer.Argument(help="Where it is, as lat,lon (e.g. 41.3874,2.1700).")],
+    label: Annotated[
+        str | None, typer.Option("--label", help="The address as the user said it.")
+    ] = None,
+    radius: Annotated[
+        int, typer.Option("--radius", min=50, max=2000, help="Search radius in metres.")
+    ] = 450,
+    max_bus: Annotated[int, typer.Option("--max-bus", min=0, max=6, help="Bus stops to keep.")] = 3,
+) -> None:
+    """Save (or replace) a place and pick its closest bus stops and metro station, with an
+    estimated walk time for each (fix them with `tmb place walk`)."""
+
+    def action() -> object:
+        favourites.check_name(name)
+        lat, lon = _point(point)
+        tmb_net, amb_net = _networks()
+        found = nearby.nearby(lat, lon, tmb_net, amb_net, radius=radius, max_bus=max_bus)
+        place = places.Place(
+            name=name,
+            lat=lat,
+            lon=lon,
+            label=label,
+            stops=[places.PlaceStop(**c.model_dump(exclude={"lat", "lon"})) for c in found],
+        )
+        replaced = places.add(place)
+        return {
+            "place": place.model_dump(),
+            "replaced": replaced,
+            "say": say.place_saved(name, [(s.name, s.walk_minutes) for s in place.stops], replaced),
+        }
+
+    _run(action)
+
+
+@place_app.command("walk")
+def place_walk(
+    name: Annotated[str, typer.Argument(help="The place's name.")],
+    code: Annotated[str, typer.Argument(help="One of its stops' codes.")],
+    minutes: Annotated[int, typer.Argument(min=0, help="Minutes you take to walk there.")],
+) -> None:
+    """Set your own walk time from a place to one of its stops."""
+    _run(lambda: {"place": places.set_walk(name, code, minutes).model_dump()})
+
+
+@place_app.command("list")
+def place_list() -> None:
+    """List your places and their stops."""
+    _run(lambda: places.load().model_dump())
+
+
+@place_app.command("remove")
+def place_remove(name: Annotated[str, typer.Argument(help="The place's name.")]) -> None:
+    """Delete a place."""
+
+    def action() -> object:
+        places.remove(name)
         return {"removed": name}
 
     _run(action)
