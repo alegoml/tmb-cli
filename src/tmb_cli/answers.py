@@ -295,8 +295,14 @@ def _say(target: Target, planned: list[PlannedArrival]) -> str:
     where = target.name if target.kind in ("place", "favourite") else None
     if any(a.make_it is not None for a in planned):
         first = next((a for a in planned if a.make_it), None)
+        # "Ya no lo pillas" only for an earlier bus of the same line: other lines are noise.
         missed = next(
-            (a for a in planned if a.make_it is False and (not first or a.eta < first.eta)), None
+            (
+                a
+                for a in planned
+                if a.make_it is False and first and a.line == first.line and a.eta < first.eta
+            ),
+            None,
         )
         return say.catch(
             (first.line, first.eta, first.leave_in, first.stop) if first else None,
@@ -367,10 +373,11 @@ def _say_near(where: str, stops: list[NearStop]) -> str:
     if not stops:
         return f"No hay paradas de TMB ni AMB a menos de 450 m de {where}."
     parts = []
-    for stop in stops[:2]:
+    for stop in stops:
         catchable = [a for a in stop.arrivals if a.make_it][:2]
-        lines = (
-            ", ".join(f"{a.line} en {a.minutes} min" for a in catchable) or "nada que pillar ahora"
-        )
-        parts.append(f"{stop.name} ({stop.walk_minutes} min andando): {lines}")
+        if catchable and len(parts) < 3:
+            lines = ", ".join(f"{a.line} en {a.minutes} min" for a in catchable)
+            parts.append(f"{stop.name} ({stop.walk_minutes} min andando): {lines}")
+    if not parts:
+        return "Hay paradas cerca, pero ahora mismo no llegas a nada que pase por ellas."
     return "Cerca: " + "; ".join(parts) + "."

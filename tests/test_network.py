@@ -228,3 +228,12 @@ def test_cli_bus_unknown_stop_is_not_found_when_the_cache_knows(net, monkeypatch
     result = runner.invoke(app, ["bus", "0009"])
     assert result.exit_code == 4
     assert json.loads(result.stderr)["error"]["code"] == "not_found"
+
+
+def test_an_exact_name_elsewhere_does_not_beat_barcelona_prefixes(net):
+    elsewhere = network.CachedStop(
+        code="9", name="Pl de Prova", description=None, town="Vila Inventada", lat=0, lon=0
+    )
+    net = net.model_copy(update={"stops": [*net.stops, elsewhere]})
+    # "Pl de Prova" (9) matches exactly but isn't in Barcelona; 4 starts with it and is.
+    assert _found(network.search(net, "plaça de prova", metro=False))[:2] == ["4", "9"]

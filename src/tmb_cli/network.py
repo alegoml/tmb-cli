@@ -252,5 +252,7 @@ def search(
                 found.append((r, group, where, amb_stop.name, result))
     # Rank; then metro, Barcelona bus stops, other towns' bus stops; then where the query starts
     # in the name; then the name.
-    found.sort(key=lambda item: item[:4])
+    # An exact name and a name prefix weigh the same, so towns break the tie: "plaça catalunya"
+    # is Barcelona's "Pl Catalunya - …" before an exact "Plaça Catalunya" in Gavà.
+    found.sort(key=lambda item: (max(item[0], 1), *item[1:4]))
     return [result for *_, result in found[:limit]]
