@@ -149,8 +149,9 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
 10. - [x] AMB docs: `docs/amb-api.md`, rule 4 widened, spec section "AMB" (D11–D13)
     - [x] AMB in code: GTFS-RT + static cache, `tmb bus` merges TMB and AMB with `operator`,
       `stops` lists AMB-only stops, `doctor`, SKILL.md/README
-    - [ ] Alex checks a shared stop with his keys (and a TMB capture of one, e.g. 916, to see
-      whether TMB lists AMB lines too); release v0.2.0; then announce (video, post)
+    - [x] Shared stop checked with real keys (916, 26/10/2026): TMB lists AMB lines too, merged
+      without duplicates
+    - [ ] Release v0.2.0; then announce (video, post)
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
 Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API

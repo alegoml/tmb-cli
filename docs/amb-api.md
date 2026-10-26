@@ -69,7 +69,9 @@ de l'Àngel", same as TMB's 1103. 1419 of TMB's 2708 stops are in AMB's GTFS (ze
 other AMB stops (e.g. Badalona's `1xxxxx`) are AMB-only. So **one code space**: `tmb bus <code>`
 can ask both sources and merge.
 
-On 25/10/2026, 436 TMB stops had AMB arrivals in the feed (e.g. 916, 917, 91). Open: TMB's real
-time also lists other operators' lines at its stops (`transit_namespace: "amb"`); not seen yet in a
-capture. If both list the same bus, we keep AMB's (the operator's own feed) and drop TMB's `amb`
-entries. Needs a TMB capture of a shared stop such as 916.
+On 25/10/2026, 436 TMB stops had AMB arrivals in the feed (e.g. 916, 917, 91). ✅ TMB's real time
+lists other operators' lines at its stops too (26/10/2026, stop 916 "Hospital Oncològic": L70,
+L72, L80, L86, L94, L95 with `transit_namespace: "amb"`, `id_operador` 6), with the same times as
+AMB's feed give or take a few seconds, but not all of them: AMB's feed also had a bus due now and
+line LH1 that TMB's answer lacked. So we keep AMB's (the operators' own feed) and drop TMB's `amb`
+entries when AMB is asked: no bus appears twice.

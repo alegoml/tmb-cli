@@ -224,7 +224,8 @@ as published ("DIREXIS TUSGSAL", "Moventis"…) for AMB's. Which sources a call 
   no keys; any other stop without keys is still `missing_credentials`.
 - Both answers are merged into one list sorted by time (D2). If TMB's answer lists other
   operators' lines (`transit_namespace: "amb"`) and AMB answered too, those TMB entries are dropped
-  so a bus never appears twice; AMB's own feed is the reference for its buses.
+  so a bus never appears twice; AMB's own feed is the reference for its buses (confirmed at stop
+  916, 26/10/2026: same times, and AMB had lines TMB's answer lacked).
 - `stop.name`: TMB's `nom_parada`, else AMB's `stop_name`. `not_found` when neither TMB nor
   either cached stop list knows the code.
 - `minutes`: from each source's own query time (TMB's `timestamp`, AMB's `header.timestamp`).
