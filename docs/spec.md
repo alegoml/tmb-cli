@@ -264,6 +264,86 @@ AMB-only stops (not out of service) join the results with `"network": "AMB"`; TM
 through `bus`. `doctor` adds an `amb` check (the real-time feed answers and parses) and reports
 the AMB cache's age.
 
+## v0.3: agent-native (places, near, say, watch) — 26/10/2026
+
+Personal agents people text (Instinct, Tab, Hermes, OpenClaw, Claude Code on a phone) get one
+message at a time ("avísame cuando le queden 5 min al 67", "estoy en Plaça Catalunya, ¿qué pasa?")
+and may run checks later on their own. So: **one message = one call**, answers that read well as a
+text message, proactive alerts, and a first-time setup that learns the user's places. Decided with
+Alex, 26/10/2026: alerts by "wait and exit" first (D14), coordinates come from the agent (D15),
+`say` in Spanish (D16).
+
+### Situations it must answer (the bar for v0.3)
+
+| The user says | One call |
+|---|---|
+| "¿Me da tiempo a pillar el bus de casa?" | `tmb next casa` |
+| "¿Cuándo pasa el 67?" | `tmb next 67` (stops of the user's places and favourites that the 67 serves) |
+| "Estoy en Plaça Catalunya, ¿qué pasa por aquí?" | `tmb near "plaça catalunya"` |
+| (location shared) "¿Qué me pilla cerca?" | `tmb near 41.3870,2.1700` |
+| "Avísame cuando al 67 le queden 5 min" | `tmb watch casa --line 67 --minutes 5` (blocks, exits on the event) |
+| "Avísame cuando tenga que salir para el 67" | `tmb watch casa --line 67 --leave` |
+| First use: "mi casa está en Carrer X, el trabajo en Y" | agent geocodes, then `tmb place add casa 41.45,2.24 --label "Carrer X"` |
+| "Tardo 4 min a esa parada, no 6" | `tmb place walk casa 102526 4` |
+| Later (v0.4): "¿a qué hora salgo para llegar a las 9 al trabajo?" | `tmb leave trabajo --by 9:00` (TMB `planner/plan`) |
+
+### Targets: anything goes
+
+Every arrivals command takes a **target**, resolved in this order: a place name, a favourite name,
+a line name (`67`, `V15`, `L3`: the stops of the user's places/favourites that it serves), a stop
+or station code (digits), coordinates (`lat,lon`), else the best `tmb stops` match for the words.
+`resolved` in the output says what was understood.
+
+### `say`
+
+Every data answer adds `"say"`: one or two sentences in Spanish, ready to forward as a text
+message, built only from the JSON next to it (no invented data). E.g.
+`"Sal en 7 min para pillar el 67 de las 11:35 (llegas justo). El de las 11:19 ya no lo pillas."`
+The JSON stays the source of truth; `say` is a convenience.
+
+### Places
+
+`$XDG_CONFIG_HOME/tmb-cli/places.json`, next to favourites, only on the user's machine. A place is
+a name, coordinates, an optional label (the address as the user said it), and its **stops**: the
+nearby TMB/AMB bus stops and metro stations, each with its walk time.
+
+- `tmb place add <name> <lat,lon> [--label TEXT] [--radius 450] [--max 4]` picks the closest stops
+  and stations within the radius (at most 3 bus stops and the closest metro station with all its
+  lines) from the cached networks, and estimates walk time: straight-line distance × 1.3 (streets
+  aren't straight) at 80 m/min, rounded up, at least 1. The answer lists them with `estimated:
+  true` so the agent confirms with the user.
+- `tmb place walk <place> <code> <minutes>` corrects one stop's walk time (`estimated: false`).
+- `tmb place list | remove <name>`.
+- `tmb next <place>` merges the arrivals of all its stops; each arrival carries its stop and
+  `leave_in`/`make_it` from that stop's walk time.
+- Favourites (v0.1) keep working unchanged; a name is looked up as a place first.
+
+### `tmb near <lat,lon | words> [--radius 450] [--limit 4]`
+
+The closest stops and stations (by straight-line distance, walk estimated as above), each with its
+next arrivals, in one answer: `{"near": {"lat", "lon", "resolved"}, "stops": [{"type", "name",
+"code" | "codes", "distance_m", "walk_minutes", "arrivals": [...]}], "say", "source",
+"updated_at"}`. Words resolve to the best matching stop or station's position. Requests: one TMB
+call per TMB bus stop (at most 3), one metro call for all stations, one AMB feed.
+
+### `tmb watch <target> [--line L]... (--minutes N | --leave) [--every 30] [--timeout 60]`
+
+Polls every `--every` seconds (min 20) and **exits as soon as the condition holds**, printing one
+event; agents run it in the background and message the user when it ends.
+
+- `--minutes N`: the first matching arrival is N minutes away or less → `"event": "due"`.
+- `--leave`: tracks the next arrival the user can still catch (`make_it`); fires when its
+  `leave_in` reaches 0 → `"event": "leave_now"`.
+- `--timeout` minutes without the event → `"event": "timeout"` (exit 0; nothing to alert).
+- Output: `{"event", "target", "arrival", "say", "checked": N, "source", "updated_at"}`. Errors
+  during polling are retried while `retryable`; others end the watch with the usual JSON error.
+
+### First-time setup (agents)
+
+SKILL.md: if `tmb place list` is empty, the agent asks which places the user goes to (home, work,
+gym…) and where they are, geocodes them, runs `tmb place add` for each, reads back the chosen stops
+with their walk times and fixes them with `tmb place walk`. Humans can do the same by hand.
+
 ## Attribution
 
 TMB's and AMB's terms require citing the source and the date of last update. Every data command
