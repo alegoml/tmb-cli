@@ -24,7 +24,7 @@ from tmb_cli.config import (
 )
 from tmb_cli.errors import Interrupted, MissingCredentials, NotFound, TmbError, UsageError
 from tmb_cli.favourites import Favourite
-from tmb_cli.models import BusArrivals, MetroArrivals, StopRef, StopSearch
+from tmb_cli.models import BusArrivals, MetroArrivals, StopRef, StopSearch, WatchEvent
 from tmb_cli.output import emit, emit_error
 
 app = typer.Typer(
@@ -259,6 +259,105 @@ def near(
         ).model_dump()
 
     _run(action)
+
+
+_sleep = time.sleep  # swapped in tests
+_now = time.monotonic
+
+
+@app.command()
+def watch(
+    target: Annotated[
+        list[str], typer.Argument(help="Like `tmb next`: a place, favourite, line, code or name.")
+    ],
+    minutes: Annotated[
+        int | None,
+        typer.Option("--minutes", min=0, help="Fire when the next arrival is this close."),
+    ] = None,
+    leave: Annotated[
+        bool, typer.Option("--leave", help="Fire when it's time to set off to catch the next one.")
+    ] = False,
+    walk: Annotated[
+        int | None, typer.Option("--walk", min=0, help="Minutes you take to get there.")
+    ] = None,
+    margin: Annotated[int, typer.Option("--margin", min=0, help="Spare minutes at the stop.")] = 0,
+    every: Annotated[
+        int, typer.Option("--every", min=20, max=300, help="Seconds between checks.")
+    ] = 30,
+    timeout: Annotated[
+        int, typer.Option("--timeout", min=1, max=240, help="Give up after this many minutes.")
+    ] = 60,
+    line: LineOption = None,
+) -> None:
+    """Wait, checking every --every seconds, and exit with one event as soon as the condition
+    holds: run it in the background and tell the user when it ends."""
+
+    def action() -> object:
+        if (minutes is None) == (not leave):
+            raise UsageError("Pass either --minutes N or --leave.")
+        text = " ".join(target)
+        goal = answers.resolve(text, _session())
+        goal.lines += line or []
+        if leave and walk is None and all(s.walk_minutes is None for s in goal.stops):
+            raise UsageError(
+                "--leave needs a walk time.",
+                hint="Use a place or favourite, or pass --walk <minutes>.",
+            )
+        started, checked = _now(), 0
+        while True:
+            checked += 1
+            try:
+                found = answers.answer(goal, _session(), walk=walk, margin=margin)
+            except TmbError as err:
+                if not err.retryable:
+                    raise
+                found = None
+            if found:
+                event = _watch_event(found, minutes, leave, margin, checked)
+                if event:
+                    return event.model_dump()
+            if _now() - started + every > timeout * 60:
+                return WatchEvent(
+                    event="timeout",
+                    target=found.resolved
+                    if found
+                    else answers.Resolved(kind=goal.kind, name=goal.name),
+                    arrival=None,
+                    say=say.watch_timeout(goal.name, timeout),
+                    checked=checked,
+                    source=found.source if found else "TMB",
+                    updated_at=found.updated_at if found else "",
+                ).model_dump()
+            _sleep(every)
+
+    _run(action)
+
+
+def _watch_event(found, minutes: int | None, leave: bool, margin: int, checked: int):
+    def event(name: str, arrival, text: str) -> WatchEvent:
+        return WatchEvent(
+            event=name,
+            target=found.resolved,
+            arrival=arrival,
+            say=text,
+            checked=checked,
+            source=found.source,
+            updated_at=found.updated_at,
+        )
+
+    if minutes is not None:
+        due = next((a for a in found.arrivals if a.minutes <= minutes), None)
+        return event("due", due, say.due(due.line, due.minutes, due.stop)) if due else None
+    # --leave: the next arrival the user can still catch; fire when it's time to go.
+    catchable = next(
+        (a for a in found.arrivals if a.leave_in is not None and a.leave_in >= 0), None
+    )
+    if catchable and catchable.leave_in <= margin:
+        text = say.leave_now(
+            catchable.line, catchable.eta, catchable.minutes, catchable.stop, catchable.walk_minutes
+        )
+        return event("leave_now", catchable, text)
+    return None
 
 
 # --- favourites ---------------------------------------------------------------------

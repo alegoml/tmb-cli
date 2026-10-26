@@ -55,3 +55,20 @@ def catch(
     if missed:
         head += f" El {missed[0]} de las {hhmm(missed[1])} ya no lo pillas."
     return head
+
+
+def due(line: str, minutes: int, stop: str) -> str:
+    if minutes <= 0:
+        return f"El {line} está llegando a {stop}."
+    return f"El {line} llega en {minutes} min a {stop}."
+
+
+def leave_now(line: str, eta: str, minutes: int, stop: str, walk: int) -> str:
+    return (
+        f"¡Sal ya! El {line} de las {hhmm(eta)} pasa por {stop} en {minutes} min "
+        f"y tardas {walk} min en llegar."
+    )
+
+
+def watch_timeout(target: str, minutes: int) -> str:
+    return f"He vigilado {target} durante {minutes} min y no ha llegado el momento; ya no vigilo."

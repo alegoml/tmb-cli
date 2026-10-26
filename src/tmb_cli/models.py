@@ -260,3 +260,13 @@ class NearAnswer(Output):
     say: str
     source: str
     updated_at: str
+
+
+class WatchEvent(Output):
+    event: str  # "due", "leave_now" or "timeout"
+    target: Resolved
+    arrival: PlannedArrival | None
+    say: str
+    checked: int  # how many times it looked
+    source: str
+    updated_at: str
