@@ -74,25 +74,49 @@ Environment variables `TMB_APP_ID` and `TMB_APP_KEY` take precedence over the fi
 
 ## Usage
 
+Built for a personal agent you text ("¿me da tiempo a pillar el bus?", "avísame cuando le queden
+5 min al 67"): one message is one call, and every answer carries `say`, a ready-to-send sentence.
+
+```bash
+tmb place add casa 41.4521,2.2410 --label "Carrer X 12"   # a place: picks its nearby stops and walk times
+tmb next casa                  # what's coming and when to leave, across all of casa's stops
+tmb next 67                    # the 67 at your places' stops
+tmb near plaça catalunya       # stops around a place, a name or a lat,lon, with arrivals
+tmb watch casa --line 67 --minutes 5   # wait, then exit when the 67 is 5 min away
+tmb watch casa --leave         # wait, then exit when it's time to set off
+```
+
+```json
+{
+  "resolved": {"kind": "place", "name": "casa"},
+  "stops": [{"type": "bus", "name": "Ronda Sant Pere - Pl Catalunya", "codes": ["1082"], "walk_minutes": 4}],
+  "arrivals": [
+    {"line": "67", "destination": "Cornellà", "minutes": 3, "eta": "2026-10-26T11:09:02+01:00", "operator": "TMB",
+     "stop": "Ronda Sant Pere - Pl Catalunya", "leave_in": -1, "make_it": false},
+    {"line": "67", "destination": "Cornellà", "minutes": 19, "eta": "2026-10-26T11:25:40+01:00", "operator": "TMB",
+     "stop": "Ronda Sant Pere - Pl Catalunya", "leave_in": 15, "make_it": true}
+  ],
+  "say": "Sal en 15 min para pillar el 67 de las 11:25 en Ronda Sant Pere - Pl Catalunya. El 67 de las 11:09 ya no lo pillas.",
+  "source": "TMB",
+  "updated_at": "2026-10-26T11:06:14+01:00"
+}
+```
+
+(Shortened.) `next` and `watch` take anything: a place, a favourite, a line, a stop code, a
+`lat,lon` point or words (`resolved` says what was understood). Places live only on your machine,
+in `~/.config/tmb-cli/places.json`; walk times are estimated from the distance until you set your
+own with `tmb place walk casa <code> <minutes>`. `tmb` doesn't geocode: the agent turns addresses
+into `lat,lon`. `watch` checks every 30 s and exits with one event (`due`, `leave_now` or
+`timeout`), so an agent runs it in the background and texts you when it ends.
+
+Lower level:
+
 ```bash
 tmb bus 1103             # next buses at stop 1103 (Pl Catalunya)
 tmb bus 1103 --line V15  # only the V15 (case-insensitive, repeatable)
 tmb metro 126 326        # next trains at Catalunya, L1 and L3 (codes are per line)
 tmb stops catalunya      # find stop and station codes by name
-tmb fav add casa 1103 --walk 4   # save a stop with your walk time to it
-tmb next casa            # next buses + whether you make it: "¿me da tiempo?"
-```
-
-```json
-{
-  "stop": {"code": "1103", "name": "Pl Catalunya - Portal de l'Àngel"},
-  "arrivals": [
-    {"line": "V15", "destination": "Barceloneta", "minutes": 5, "eta": "2026-10-25T09:48:39+01:00", "operator": "TMB"},
-    {"line": "H16", "destination": "Fòrum Campus Besòs", "minutes": 7, "eta": "2026-10-25T09:50:05+01:00", "operator": "TMB"}
-  ],
-  "source": "TMB",
-  "updated_at": "2026-10-25T09:42:54+01:00"
-}
+tmb fav add casa 1103 --walk 4   # a single stop with your walk time (places are the richer version)
 ```
 
 `minutes` is rounded down (3 min 50 s shows 3) and `eta` is Barcelona time. Arrivals are the next
@@ -111,10 +135,9 @@ station lists one code per line (`"codes": {"L1": "126", "L3": "326"}`): pass th
 `tmb metro`. The first run downloads the static network (13 requests) to
 `~/.cache/tmb-cli/network.json`; it refreshes weekly, or now with `--refresh`.
 
-`tmb next casa` adds to each arrival `leave_in` (minutes until you must set off: `minutes` minus
-your walk time) and `make_it` (`leave_in` ≥ `--margin`, 0 by default). Favourites live only on your
-machine, in `~/.config/tmb-cli/favourites.json`. A metro favourite can hold every line of an
-interchange: `tmb fav add feina 126 326 --metro --walk 5`.
+`leave_in` is minutes until you must set off (`minutes` minus your walk time) and `make_it` is
+`leave_in` ≥ `--margin` (0 by default). Favourites live in `~/.config/tmb-cli/favourites.json`; a
+metro favourite can hold every line of an interchange: `tmb fav add feina 126 326 --metro --walk 5`.
 
 Errors are printed to stderr as one line of JSON, with stable exit codes:
 
@@ -157,8 +180,13 @@ there.
    ```
    For other agents, point them at `tmb skills get` or paste it into their instructions
    (`AGENTS.md`).
-3. Ask: "guarda mi parada de casa, la 1103, tardo 4 minutos" → `tmb fav add casa 1103 --walk 4`.
-   Then "¿me da tiempo?" → `tmb --no-input next casa`.
+3. The first time, the agent asks which places you use and where they are, and saves them with
+   `tmb place add` (it picks the stops and walk times; you correct them). Then just text it:
+   "¿me da tiempo a pillar el bus?", "¿cuándo pasa el 67?", "estoy en Plaça Catalunya, ¿qué pasa?",
+   "avísame cuando tenga que salir".
+
+It works with coding agents (Claude Code, Codex…) and with personal agents you message that can
+run commands (Hermes, OpenClaw, a phone agent with a terminal…).
 
 Why a CLI and not raw `curl` against the API: the keys stay out of the agent's context (and out of
 its logs), stop names resolve to codes (`tmb stops`), the output is compact (a fraction of the raw
