@@ -7,10 +7,12 @@ in AMB's real files (docs/amb-api.md) and made-up values (AGENTS.md rule 3).
 import io
 import zipfile
 
+import httpx
 import pytest
 from google.transit import gtfs_realtime_pb2
 
 from tmb_cli import cli
+from tmb_cli.client import AmbClient, TmbClient
 
 T = 1767225600  # 2026-01-01T00:00:00Z, the same base time as the TMB fixtures
 
@@ -98,3 +100,17 @@ def fake_amb(tmp_path, monkeypatch):
     monkeypatch.setattr(FakeAmb, "downloads", 0)
     monkeypatch.setattr(cli, "_amb_client", FakeAmb)
     return FakeAmb
+
+
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    """Rule 3 as a guard: a client without a MockTransport fails the test instead of calling out."""
+    for cls, method in ((TmbClient, "get"), (AmbClient, "_get")):
+        original = getattr(cls, method)
+
+        def guarded(self, *args, _original=original, **kwargs):
+            if not isinstance(self._http._transport, httpx.MockTransport):
+                raise AssertionError(f"network call in a test: {args[0] if args else ''}")
+            return _original(self, *args, **kwargs)
+
+        monkeypatch.setattr(cls, method, guarded)

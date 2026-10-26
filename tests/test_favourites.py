@@ -103,8 +103,16 @@ def test_next_from_a_favourite(fake_api):
     ok("fav", "add", "casa", "0001", "--walk", "4")
     out = ok("next", "casa")
     assert fake_api == ["1"]
-    assert out["favourite"] == {"name": "casa", "type": "bus", "codes": ["1"], "walk_minutes": 4}
-    assert out["stop"]["name"] == "Parada de prova"
+    assert out["resolved"] == {"kind": "favourite", "name": "casa", "lat": None, "lon": None}
+    assert out["stops"] == [
+        {
+            "type": "bus",
+            "name": "Parada de prova",
+            "codes": ["1"],
+            "walk_minutes": 4,
+            "distance_m": None,
+        }
+    ]
     # minutes 0, 3, 5, 15 with a 4-minute walk
     assert [(a["minutes"], a["leave_in"], a["make_it"]) for a in out["arrivals"]] == [
         (0, -4, False),
@@ -112,49 +120,48 @@ def test_next_from_a_favourite(fake_api):
         (5, 1, True),
         (15, 11, True),
     ]
-    assert list(out["arrivals"][0]) == [
-        "line",
-        "destination",
-        "minutes",
-        "eta",
-        "operator",
-        "make_it",
-        "leave_in",
-    ]
+    assert out["say"] == (
+        "Sal en 1 min para pillar el X2 de las 01:05 en Parada de prova. "
+        "El X2 de las 00:59 ya no lo pillas."
+    )
     assert out["source"] == "TMB"
 
 
 def test_next_margin_walk_override_and_line_filter():
     ok("fav", "add", "casa", "0001", "--walk", "4")
     out = ok("next", "casa", "--margin", "2", "--walk", "2", "-l", "x1")
-    assert out["favourite"]["walk_minutes"] == 2
+    assert out["stops"][0]["walk_minutes"] == 2
     assert [(a["line"], a["leave_in"], a["make_it"]) for a in out["arrivals"]] == [
         ("X1", 1, False),
         ("X1", 13, True),
     ]
 
 
-def test_next_with_a_code_needs_walk():
-    assert error("next", "0001") == (2, "usage")
-    out = ok("next", "0001", "--walk", "3")
-    assert out["favourite"] == {"name": None, "type": "bus", "codes": ["0001"], "walk_minutes": 3}
+def test_next_with_a_bare_code_needs_no_walk():
+    out = ok("next", "0001")
+    assert out["resolved"]["kind"] == "stop"
+    assert {a["leave_in"] for a in out["arrivals"]} == {None}
+    assert out["say"] == "Parada de prova: X2 en 0 min, X1 en 3 min y X2 en 5 min."
+    assert ok("next", "0001", "--walk", "3")["arrivals"][2]["leave_in"] == 2
 
 
 def test_next_metro_favourite_and_code(fake_api):
     ok("fav", "add", "feina", "901", "801", "--walk", "2", "--metro")
     out = ok("next", "feina")
     assert fake_api == [["901", "801"]]
-    first = out["stations"][0]
-    assert first["code"] == "901"
-    assert [(a["minutes"], a["leave_in"], a["make_it"]) for a in first["arrivals"]] == [
-        (1, -1, False),
-        (2, 0, True),
-        (8, 6, True),
+    assert [(a["line"], a["minutes"], a["leave_in"], a["make_it"]) for a in out["arrivals"]] == [
+        ("X9", 1, -1, False),
+        ("X9", 2, 0, True),
+        ("X8", 4, 2, True),
+        ("X9", 8, 6, True),
     ]
-    assert ok("next", "801", "--metro", "--walk", "1")["favourite"]["type"] == "metro"
+    assert out["arrivals"][0]["track"] == 2
+    assert ok("next", "801", "--metro", "--walk", "1")["resolved"]["kind"] == "station"
 
 
-def test_next_unknown_favourite_or_misused_metro_flag():
+def test_next_unknown_name_or_misused_metro_flag(monkeypatch):
+    for name in ("bus_stops", "metro_lines", "metro_line_stations"):
+        monkeypatch.setattr(cli.TmbClient, name, getattr(FakeStatic, name))
     assert error("next", "enlloc") == (4, "not_found")
     ok("fav", "add", "casa", "0001", "--walk", "4")
     assert error("next", "casa", "--metro") == (2, "usage")

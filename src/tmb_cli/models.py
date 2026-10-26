@@ -202,47 +202,59 @@ class StopSearch(Output):
     updated_at: str  # the older dataset date of the cached networks
 
 
-# --- `tmb next`: arrivals plus whether the user can catch them ----------------------
+# --- v0.3: any target, near (spec "v0.3: agent-native") -----------------------------
 
 
-class Timing(Output):
-    make_it: bool  # leave_in >= margin
-    leave_in: int  # minutes until the user must set off: minutes - walk_minutes (can be negative)
-
-
-class NextArrival(Timing, Arrival):
-    pass
-
-
-class NextMetroArrival(Timing, MetroArrival):
-    pass
-
-
-class Target(Output):
-    """What `tmb next` looked at: a favourite (`name`) or codes given directly (`name` null)."""
-
+class StopRef(Output):
+    type: str  # "bus" or "metro"
     name: str | None
-    type: str
     codes: list[str]
-    walk_minutes: int
+    walk_minutes: int | None = None  # None: no walk time known (a bare code or a search)
+    distance_m: int | None = None  # from the point asked, when there is one
 
 
-class BusNext(Output):
-    favourite: Target
-    stop: Stop
-    arrivals: list[NextArrival]
-    source: str = "TMB"
+class PlannedArrival(Output):
+    line: str
+    destination: str
+    minutes: int
+    eta: str
+    operator: str
+    stop: str
+    type: str
+    track: int | None  # metro only
+    walk_minutes: int | None
+    leave_in: int | None  # None without a walk time
+    make_it: bool | None
+
+
+class Resolved(Output):
+    kind: str  # place, favourite, line, stop, station, point
+    name: str
+    lat: float | None = None
+    lon: float | None = None
+
+
+class TargetAnswer(Output):
+    resolved: Resolved
+    stops: list[StopRef]
+    arrivals: list[PlannedArrival]
+    say: str
+    source: str
     updated_at: str
 
 
-class NextStation(Output):
-    code: str
+class NearStop(Output):
+    type: str
     name: str | None
-    arrivals: list[NextMetroArrival]
+    codes: list[str]
+    distance_m: int | None
+    walk_minutes: int | None
+    arrivals: list[PlannedArrival]
 
 
-class MetroNext(Output):
-    favourite: Target
-    stations: list[NextStation]
-    source: str = "TMB"
+class NearAnswer(Output):
+    near: Resolved
+    stops: list[NearStop]
+    say: str
+    source: str
     updated_at: str
