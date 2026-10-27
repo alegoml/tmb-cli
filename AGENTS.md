@@ -164,10 +164,12 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
     - [x] v0.5: `tmb setup` (guided onboarding with next_question), trips (`trip add|list|remove`,
       used by `leave`/`route`), `prefs` (margin, pace), ambiguity flags + alternatives
     - [x] Released as v0.3.0 (27/10/2026)
-    - [ ] Ramp status per bus; ntfy/webhook sinks for `watch` if agents need them
+    - [ ] Ramp status per bus
+    - [-] Notification sinks (ntfy, webhook) for `watch`: built and reverted (27/10/2026). Alex: the
+      agent messages the user itself; nobody should need another app
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
-Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API
+Sink [wallapop] (sinks dropped: see v0.5 above); `plan A B` via `planner/plan`; service alerts (if the API
 exposes them); `leave` ("¿cuándo salgo?"); Bicing availability; MCP server as a thin wrapper that
 runs each command and returns its JSON verbatim, plus `tmb mcp install claude-code` [wallapop];
 prefilled GitHub issue link on `api_changed` [wallapop]; Homebrew tap [vodafone]; train positions
