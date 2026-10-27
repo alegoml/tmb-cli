@@ -266,11 +266,21 @@ class PlannedArrival(Output):
     make_it: bool | None
 
 
+class Alternative(Output):
+    name: str
+    type: str  # bus or metro
+    town: str | None
+    codes: list[str]
+
+
 class Resolved(Output):
     kind: str  # place, favourite, line, stop, station, point
     name: str
     lat: float | None = None
     lon: float | None = None
+    # A name matching equally well somewhere else (> 500 m away): ask before acting on it.
+    ambiguous: bool = False
+    alternatives: list[Alternative] = []
 
 
 class TargetAnswer(Output):

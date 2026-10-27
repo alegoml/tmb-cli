@@ -82,6 +82,18 @@ def remove(name: str) -> None:
     _save(Places(places=others))
 
 
+def confirm(name: str) -> Place:
+    """The user agrees with the estimated walk times: they become theirs."""
+    current = load()
+    place = next((p for p in current.places if p.name == name), None)
+    if place is None:
+        raise NotFound(f"No place named `{name}`.", hint="See them with `tmb place list`.")
+    for stop in place.stops:
+        stop.estimated = False
+    _save(current)
+    return place
+
+
 def set_walk(name: str, code: str, minutes: int) -> Place:
     """The user's own walk time to one of a place's stops (`code`: any of the stop's codes)."""
     current = load()

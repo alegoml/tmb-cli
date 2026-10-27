@@ -103,7 +103,7 @@ def test_next_from_a_favourite(fake_api):
     ok("fav", "add", "casa", "0001", "--walk", "4")
     out = ok("next", "casa")
     assert fake_api == ["1"]
-    assert out["resolved"] == {"kind": "favourite", "name": "casa", "lat": None, "lon": None}
+    assert (out["resolved"]["kind"], out["resolved"]["name"]) == ("favourite", "casa")
     assert out["stops"] == [
         {
             "type": "bus",

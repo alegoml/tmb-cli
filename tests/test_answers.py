@@ -60,7 +60,14 @@ def test_next_place_merges_all_its_stops_with_their_own_walks():
 def test_next_line_looks_in_the_users_stops():
     ok("place", "add", "casa", HOME)
     out = ok("next", "y7")
-    assert out["resolved"] == {"kind": "line", "name": "Y7", "lat": None, "lon": None}
+    assert out["resolved"] == {
+        "kind": "line",
+        "name": "Y7",
+        "lat": None,
+        "lon": None,
+        "ambiguous": False,
+        "alternatives": [],
+    }
     assert {a["line"] for a in out["arrivals"]} == {"Y7"}
     metro = ok("next", "X9")
     assert {(a["line"], a["type"]) for a in metro["arrivals"]} == {("X9", "metro")}

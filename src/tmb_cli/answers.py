@@ -8,10 +8,11 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from tmb_cli import amb, arrivals, favourites, nearby, network, places, say
+from tmb_cli import amb, arrivals, favourites, nearby, network, places, profile, say
 from tmb_cli.client import AmbClient, TmbClient
 from tmb_cli.errors import MissingCredentials, NotFound, UsageError
 from tmb_cli.models import (
+    Alternative,
     BusArrivals,
     MetroArrivals,
     NearAnswer,
@@ -128,6 +129,28 @@ class Target:
     stops: list[StopRef]
     lines: list[str] = field(default_factory=list)
     point: tuple[float, float] | None = None
+    town: str | None = None
+    alternatives: list[Alternative] = field(default_factory=list)
+
+    def resolved(self, point: tuple[float, float] | None = None) -> Resolved:
+        lat, lon = point or (None, None)
+        return Resolved(
+            kind=self.kind,
+            name=self.name,
+            lat=lat,
+            lon=lon,
+            ambiguous=bool(self.alternatives),
+            alternatives=self.alternatives,
+        )
+
+    def hedge(self) -> str:
+        """ "Entiendo X (Barcelona); si te referías a Y (Gavà), dímelo. " when ambiguous."""
+        if not self.alternatives:
+            return ""
+        alt = self.alternatives[0]
+        here = f" ({self.town})" if self.town else ""
+        there = alt.town or ("metro" if alt.type == "metro" else "otro sitio")
+        return f"Entiendo {self.name}{here}; si te referías a {alt.name} ({there}), dímelo. "
 
 
 def _place_stops(place: places.Place) -> list[StopRef]:
@@ -172,7 +195,10 @@ def resolve(text: str, session: Session) -> Target:
 
 
 def _around(point: tuple[float, float], session: Session, radius: float = 450) -> list[StopRef]:
-    found = nearby.nearby(*point, session.tmb_net_for_search(), session.amb_net, radius=radius)
+    pace = profile.load_prefs().walk_m_per_min
+    found = nearby.nearby(
+        *point, session.tmb_net_for_search(), session.amb_net, radius=radius, m_per_min=pace
+    )
     return [
         StopRef(
             type=c.type,
@@ -185,33 +211,49 @@ def _around(point: tuple[float, float], session: Session, radius: float = 450) -
     ]
 
 
+AMBIGUOUS_M = 500  # an equally good match farther than this is another place
+
+
 def _search(words: str, session: Session) -> Target:
     tmb_net = session.tmb_net_for_search()
     if not network.normalize(words):
         raise UsageError("Say a place, a stop, a line or a lat,lon point.")
-    results = (
-        network.search(tmb_net, words, amb=session.amb_net, limit=1)
+    ranked = (
+        network.search(tmb_net, words, amb=session.amb_net, limit=8, ranked=True)
         if tmb_net
         else _search_amb_only(words, session)
     )
-    if not results:
+    if not ranked:
         raise NotFound(
             f"Nothing called `{words}` among your places, favourites, stops or stations.",
             hint="Save it with `tmb place add`, or search with `tmb stops <words>`.",
         )
-    best = results[0]
+    best_rank, best = ranked[0]
     point = _position(best, tmb_net, session.amb_net)
+    alternatives: list[Alternative] = []
+    for rank, other in ranked[1:]:
+        where = _position(other, tmb_net, session.amb_net)
+        far = point and where and nearby.distance_m(*point, *where) > AMBIGUOUS_M
+        seen = {(a.name, a.town) for a in alternatives}
+        town = getattr(other, "town", None)
+        if rank == best_rank and far and (other.name, town) not in seen and len(alternatives) < 3:
+            codes = list(other.codes.values()) if other.type == "metro" else [other.code]
+            alternatives.append(
+                Alternative(name=other.name, type=other.type, town=town, codes=codes)
+            )
+    town = getattr(best, "town", None)
     if best.type == "metro":
         stop = StopRef(type="metro", name=best.name, codes=list(best.codes.values()))
-        return Target("station", best.name, [stop], point=point)
-    return Target(
-        "stop", best.name, [StopRef(type="bus", name=best.name, codes=[best.code])], point=point
-    )
+        return Target(
+            "station", best.name, [stop], point=point, town=town, alternatives=alternatives
+        )
+    stop = StopRef(type="bus", name=best.name, codes=[best.code])
+    return Target("stop", best.name, [stop], point=point, town=town, alternatives=alternatives)
 
 
 def _search_amb_only(words: str, session: Session) -> list:
     empty = network.Network(downloaded_at=0, updated_at="", stops=[], stations=[])
-    return network.search(empty, words, amb=session.amb_net, metro=False, limit=1)
+    return network.search(empty, words, amb=session.amb_net, metro=False, limit=8, ranked=True)
 
 
 def _position(result, tmb_net: network.Network | None, amb_net: amb.AmbCache):
@@ -282,10 +324,10 @@ def answer(
             )
     planned.sort(key=lambda a: (a.eta, a.line))
     return TargetAnswer(
-        resolved=Resolved(kind=target.kind, name=target.name),
+        resolved=target.resolved(),
         stops=stops,
         arrivals=planned,
-        say=_say(target, planned),
+        say=target.hedge() + _say(target, planned),
         source=_sources(sources),
         updated_at=min(times) if times else "",
     )
@@ -359,11 +401,10 @@ def near(target: Target, session: Session, *, limit: int = 4) -> NearAnswer:
                 ],
             )
         )
-    lat, lon = target.point
     return NearAnswer(
-        near=Resolved(kind=target.kind, name=target.name, lat=lat, lon=lon),
+        near=target.resolved(target.point),
         stops=result,
-        say=_say_near(target.name, result),
+        say=target.hedge() + _say_near(target.name, result),
         source=_sources(sources),
         updated_at=min(times) if times else "",
     )
@@ -398,7 +439,7 @@ def locate(text: str, session: Session) -> Resolved:
             f"I don't know where `{text}` is.",
             hint="Save it with `tmb place add <name> <lat,lon>`, or pass lat,lon.",
         )
-    return Resolved(kind=target.kind, name=target.name, lat=point[0], lon=point[1])
+    return target.resolved(point)
 
 
 def _position_of_codes(codes: list[str], session: Session) -> tuple[float, float] | None:
@@ -415,3 +456,12 @@ def _position_of_codes(codes: list[str], session: Session) -> tuple[float, float
         if stop := session.amb_net.stops.get(code):
             return (stop.lat, stop.lon)
     return None
+
+
+def hedge(resolved: Resolved) -> str:
+    """The ambiguity note for a resolved position (routes): "Entiendo X; si te referías a Y…"."""
+    if not resolved.ambiguous or not resolved.alternatives:
+        return ""
+    alt = resolved.alternatives[0]
+    there = alt.town or ("metro" if alt.type == "metro" else "otro sitio")
+    return f"Entiendo {resolved.name}; si te referías a {alt.name} ({there}), dímelo. "

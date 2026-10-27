@@ -36,8 +36,8 @@ def distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2 * r * math.asin(math.sqrt(a))
 
 
-def walk_minutes(metres: float) -> int:
-    return max(1, math.ceil(metres * DETOUR / WALK_M_PER_MIN))
+def walk_minutes(metres: float, m_per_min: int = WALK_M_PER_MIN) -> int:
+    return max(1, math.ceil(metres * DETOUR / m_per_min))
 
 
 class Candidate(BaseModel):
@@ -60,6 +60,7 @@ def nearby(
     radius: float = 450,
     max_bus: int = 3,
     max_metro: int = 1,
+    m_per_min: int = WALK_M_PER_MIN,
 ) -> list[Candidate]:
     """The closest bus stops and metro stations within `radius` metres, closest first."""
     found: list[Candidate] = []
@@ -76,7 +77,7 @@ def nearby(
                     lat=plat,
                     lon=plon,
                     distance_m=round(d),
-                    walk_minutes=walk_minutes(d),
+                    walk_minutes=walk_minutes(d, m_per_min),
                 )
             )
 

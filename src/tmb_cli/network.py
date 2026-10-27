@@ -216,7 +216,8 @@ def search(
     bus: bool = True,
     metro: bool = True,
     limit: int = 10,
-) -> list[BusStopResult | StationResult]:
+    ranked: bool = False,
+) -> list:
     """TMB's stops and stations, plus AMB-only stops when `amb` is given (a stop both list is
     TMB's; out-of-service AMB stops are left out)."""
     q = normalize(query)
@@ -255,4 +256,6 @@ def search(
     # An exact name and a name prefix weigh the same, so towns break the tie: "plaça catalunya"
     # is Barcelona's "Pl Catalunya - …" before an exact "Plaça Catalunya" in Gavà.
     found.sort(key=lambda item: (max(item[0], 1), *item[1:4]))
+    if ranked:  # (how well it matched, result), for telling apart equally good matches
+        return [(max(item[0], 1), item[-1]) for item in found[:limit]]
     return [result for *_, result in found[:limit]]
