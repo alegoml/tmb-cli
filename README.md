@@ -89,14 +89,7 @@ tmb leave trabajo --by 9:00    # when to leave (from casa); --wait exits at that
 tmb setup                      # what's missing and the next question to ask (agents onboarding you)
 tmb trip add trabajo --from casa --to trabajo --by 9:00 --days lun-vie   # then: tmb leave trabajo
 tmb prefs --margin 2 --pace slow   # default spare minutes; walking pace for estimates
-tmb prefs --notify ntfy:tmb-3f9c2a7b1e04   # also push alerts to the ntfy app on your phone
-tmb notify-test                # check the push gets there
 ```
-
-`watch` and `leave --wait` can push the alert themselves (`--notify` or the default in `prefs`):
-to the [ntfy](https://ntfy.sh) app (`ntfy:<topic>`, or your own server `ntfy:https://host/<topic>`)
-or as a JSON POST to a `webhook:<url>`. Only the alert's text leaves your machine, only when an
-alert fires. On ntfy.sh anyone who knows a topic can read it: use a long random one.
 
 `tmb` can't see your phone's location: your agent passes a location you share (a WhatsApp or
 iMessage pin) as `lat,lon`, or asks where you are. When a name matches two places ("Plaça
