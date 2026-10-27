@@ -98,6 +98,22 @@ class TmbClient:
             raise ValueError("At least one station code is required.")
         return self.get("itransit/metro/estacions", params={"estacions": ",".join(station_codes)})
 
+    # --- trip planner (planner/plan) ------------------------------------------
+
+    def plan(
+        self, origin: tuple[float, float], destination: tuple[float, float], when: dict[str, str]
+    ) -> dict:
+        """Public-transport itineraries. `when`: date (mm-dd-yyyy), time (6:00pm), arriveBy."""
+        return self.get(
+            "planner/plan",
+            params={
+                "fromPlace": f"{origin[0]:.6f},{origin[1]:.6f}",
+                "toPlace": f"{destination[0]:.6f},{destination[1]:.6f}",
+                "mode": "TRANSIT,WALK",
+                **when,
+            },
+        )
+
     # --- static network (cached by `network.py`) ------------------------------
 
     def bus_stops(self) -> dict:

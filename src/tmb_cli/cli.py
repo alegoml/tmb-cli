@@ -6,12 +6,25 @@ import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from importlib.resources import files
 from typing import Annotated, NoReturn
 
 import typer
 
-from tmb_cli import __version__, amb, answers, arrivals, favourites, nearby, network, places, say
+from tmb_cli import (
+    __version__,
+    amb,
+    answers,
+    arrivals,
+    favourites,
+    nearby,
+    network,
+    places,
+    routes,
+    say,
+)
+from tmb_cli.arrivals import MADRID
 from tmb_cli.client import AmbClient, TmbClient
 from tmb_cli.config import (
     ENV_APP_ID,
@@ -358,6 +371,93 @@ def _watch_event(found, minutes: int | None, leave: bool, margin: int, checked: 
         )
         return event("leave_now", catchable, text)
     return None
+
+
+def _clock() -> datetime:  # swapped in tests
+    return datetime.now(MADRID)
+
+
+ByOption = Annotated[
+    str | None, typer.Option("--by", help="Arrive by this time (HH:MM, Barcelona time).")
+]
+DayOption = Annotated[
+    str | None, typer.Option("--day", help="YYYY-MM-DD (default: today, or tomorrow if past).")
+]
+
+
+def _plan(origin: str, destination: str, by: str | None, at: str | None, day: str | None):
+    if by and at:
+        raise UsageError("Pass --by or --at, not both.")
+    session = _session()
+    start = answers.locate(origin, session)
+    end = answers.locate(destination, session)
+    now = _clock()
+    when = routes.deadline(by or at, day, now) if (by or at) else now
+    with _client() as client:
+        payload = client.plan(
+            (start.lat, start.lon), (end.lat, end.lon), routes.planner_params(when, bool(by))
+        )
+    return routes.answer(payload, start, end, when=when, arrive_by=bool(by), now=now)
+
+
+@app.command()
+def route(
+    origin: Annotated[str, typer.Argument(help="From: a place, lat,lon, or a stop/station name.")],
+    destination: Annotated[str, typer.Argument(help="To: the same kinds as FROM.")],
+    by: ByOption = None,
+    at: Annotated[
+        str | None, typer.Option("--at", help="Leave at this time (HH:MM). Default: now.")
+    ] = None,
+    day: DayOption = None,
+) -> None:
+    """Up to 3 public-transport options from TMB's trip planner (timetables, not real time)."""
+    _run(lambda: _plan(origin, destination, by, at, day).model_dump(by_alias=True))
+
+
+@app.command()
+def leave(
+    destination: Annotated[
+        list[str], typer.Argument(help="Where to: a place, lat,lon, or a stop/station name.")
+    ],
+    origin: Annotated[
+        str | None, typer.Option("--from", help="From where (default: the place `casa`).")
+    ] = None,
+    by: ByOption = None,
+    day: DayOption = None,
+    wait: Annotated[
+        bool, typer.Option("--wait", help="Wait and exit with an event when it's time to go.")
+    ] = False,
+) -> None:
+    """When to leave to get somewhere (by --by, else leaving now): the best option, with
+    `leave_in`. With --wait, re-plans every 5 min and exits at the departure time."""
+
+    def action() -> object:
+        start = origin or ("casa" if places.find("casa") else None)
+        if start is None:
+            raise UsageError(
+                "Where from? Pass --from.",
+                hint="Or save your home: `tmb place add casa <lat,lon>`.",
+            )
+        target = " ".join(destination)
+        checked = 0
+        while True:
+            checked += 1
+            found = _plan(start, target, by, None, day)
+            best = found.options[0]
+            if not wait:
+                return found.model_copy(update={"options": [best]}).model_dump(by_alias=True)
+            if best.leave_in <= 0:
+                return {
+                    "event": "leave_now",
+                    "option": best.model_dump(by_alias=True),
+                    "say": found.say,  # already "Sal ya (HH:MM): …" at departure time
+                    "checked": checked,
+                    "source": "TMB",
+                    "updated_at": found.updated_at,
+                }
+            _sleep(min(300, best.leave_in * 60))
+
+    _run(action)
 
 
 # --- favourites ---------------------------------------------------------------------

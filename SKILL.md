@@ -37,9 +37,22 @@ Names: lowercase, start with a letter (`casa`, `trabajo`, `gym`). Ask again only
 | "Quiero llegar con margen" | add `--margin 2` |
 | "Avísame cuando al 67 le queden 5 min" | `tmb --no-input watch casa --line 67 --minutes 5` (background) |
 | "Avísame cuando tenga que salir" | `tmb --no-input watch casa --leave` (background) |
+| "¿Cómo voy a Sagrada Família?" | `tmb --no-input route casa "sagrada familia"` |
+| "Tengo que estar en el trabajo a las 9, ¿a qué hora salgo?" | `tmb --no-input leave trabajo --by 9:00` |
+| "Estoy en X, ¿llego a las 18:00 a casa de Laura?" | `tmb --no-input leave 41.39,2.15 --from 41.38,2.17 --by 18:00` |
+| "Calcula la ruta y avísame cuando tenga que salir" | `tmb --no-input leave trabajo --by 9:00 --wait` (background) |
 
 `next` and `watch` take anything: a place, a favourite, a line, a stop code, `lat,lon`, or words.
 `resolved` in the answer says what was understood; if it isn't what the user meant, ask.
+
+## Routes (`route`, `leave`)
+
+From and to are places, `lat,lon` (geocode addresses yourself), or stop/station names. Quote
+multi-word values for `route` and `--from` (`--from "plaça catalunya"`). `leave` defaults
+`--from` to the place `casa`. `--by HH:MM` = arrive by (today, or tomorrow if past; `--day
+YYYY-MM-DD`). Routes come from TMB's planner: **timetables, not real time** (`say` says "según
+horarios"); for the first bus or metro, check it with `next` just before leaving.
+`leave --wait` re-plans every 5 min and exits with `leave_now` at the departure time.
 
 ## Alerts (`watch`)
 

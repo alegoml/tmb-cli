@@ -5,7 +5,7 @@ TMB sends is ignored, so new fields don't break us. Shapes come from real captur
 (docs/tmb-api.md). The other models are our own output: the stable JSON contract of the CLI.
 """
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from tmb_cli.errors import ApiChanged
 
@@ -131,6 +131,43 @@ class WireStationFeature(Wire):
 
 class WireStations(Wire):  # transit/linies/metro/{line}/estacions
     features: list[WireStationFeature]
+
+
+# --- TMB trip planner (planner/plan, OpenTripPlanner) ---------------------------------
+
+
+class WirePlanPlace(Wire):
+    name: str
+    stopCode: str | None = None
+
+
+class WireLeg(Wire):
+    model_config = ConfigDict(extra="ignore", frozen=True, populate_by_name=True)
+
+    mode: str  # WALK, SUBWAY, BUS, …
+    startTime: int  # epoch ms
+    endTime: int
+    routeShortName: str | None = None  # transit legs only
+    headsign: str | None = None
+    origin: WirePlanPlace = Field(alias="from")
+    to: WirePlanPlace
+
+
+class WireItinerary(Wire):
+    startTime: int  # epoch ms: when to leave the origin
+    endTime: int
+    duration: int  # seconds
+    walkTime: int  # seconds
+    transfers: int
+    legs: list[WireLeg]
+
+
+class WirePlan(Wire):
+    itineraries: list[WireItinerary]
+
+
+class WirePlanResponse(Wire):
+    plan: WirePlan | None = None  # absent when OTP finds no route
 
 
 # --- Output ---------------------------------------------------------------------
@@ -269,4 +306,41 @@ class WatchEvent(Output):
     say: str
     checked: int  # how many times it looked
     source: str
+    updated_at: str
+
+
+# --- v0.4: routes ---------------------------------------------------------------------
+
+
+class RouteLeg(Output):
+    mode: str  # walk, metro, bus, tram, train, …
+    line: str | None
+    direction: str | None
+    origin: str = Field(serialization_alias="from")
+    to: str
+    from_code: str | None
+    depart: str
+    arrive: str
+    minutes: int
+
+
+class RouteOption(Output):
+    leave_at: str
+    leave_in: int  # minutes from now; negative if it's already too late
+    arrive_at: str
+    minutes: int
+    walk_minutes: int
+    transfers: int
+    scheduled: bool = True  # timetable, not real time
+    legs: list[RouteLeg]
+
+
+class RouteAnswer(Output):
+    origin: Resolved = Field(serialization_alias="from")
+    to: Resolved
+    arrive_by: str | None
+    depart_at: str | None
+    options: list[RouteOption]
+    say: str
+    source: str = "TMB"
     updated_at: str

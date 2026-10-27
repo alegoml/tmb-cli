@@ -84,6 +84,8 @@ tmb next 67                    # the 67 at your places' stops
 tmb near plaça catalunya       # stops around a place, a name or a lat,lon, with arrivals
 tmb watch casa --line 67 --minutes 5   # wait, then exit when the 67 is 5 min away
 tmb watch casa --leave         # wait, then exit when it's time to set off
+tmb route casa "sagrada familia" --by 18:00   # up to 3 options from TMB's trip planner
+tmb leave trabajo --by 9:00    # when to leave (from casa); --wait exits at that time
 ```
 
 ```json

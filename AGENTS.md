@@ -159,7 +159,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
       (nearby stops + estimated walks); `next` takes a place, favourite, line, code, point or
       words; `near`; `say` on every answer; `watch --minutes|--leave` (wait and exit); SKILL.md with
       first-time setup and phrase → command table
-    - [ ] Capture `planner/plan` (Alex), then `tmb leave <to> --by HH:MM` and `tmb route` (v0.4)
+    - [x] v0.4: `planner/plan` captured (27/10/2026); `tmb route`, `tmb leave [--wait]` (spec v0.4)
     - [ ] Habitual trips ("los martes a pádel a las 19h"), ramp status per bus, ntfy/webhook sinks
       for `watch` if agents need them
 

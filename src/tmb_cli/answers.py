@@ -381,3 +381,37 @@ def _say_near(where: str, stops: list[NearStop]) -> str:
     if not parts:
         return "Hay paradas cerca, pero ahora mismo no llegas a nada que pase por ellas."
     return "Cerca: " + "; ".join(parts) + "."
+
+
+# --- positions, for routes ----------------------------------------------------------
+
+
+def locate(text: str, session: Session) -> Resolved:
+    """Where a target is, for the trip planner: a place, a lat,lon, a stop or station (by name,
+    code or favourite). Lines have no position."""
+    target = resolve(text, session)
+    if target.kind == "line":
+        raise UsageError(f"`{text}` is a line, not a place.", hint="Say a place, stop or lat,lon.")
+    point = target.point or _position_of_codes(target.stops[0].codes, session)
+    if point is None:
+        raise NotFound(
+            f"I don't know where `{text}` is.",
+            hint="Save it with `tmb place add <name> <lat,lon>`, or pass lat,lon.",
+        )
+    return Resolved(kind=target.kind, name=target.name, lat=point[0], lon=point[1])
+
+
+def _position_of_codes(codes: list[str], session: Session) -> tuple[float, float] | None:
+    tmb_net = session.tmb_net_for_search()
+    wanted = {str(int(c)) for c in codes}
+    if tmb_net:
+        for stop in tmb_net.stops:
+            if stop.code in wanted:
+                return (stop.lat, stop.lon)
+        for station in tmb_net.stations:
+            if wanted & set(station.codes.values()):
+                return (station.lat, station.lon)
+    for code in wanted:
+        if stop := session.amb_net.stops.get(code):
+            return (stop.lat, stop.lon)
+    return None

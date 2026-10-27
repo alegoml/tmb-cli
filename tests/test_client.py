@@ -86,3 +86,23 @@ def test_invalid_or_non_finite_json_means_the_api_changed(body):
         with pytest.raises(ApiChanged) as excinfo:
             client.bus_arrivals("0001")
     assert excinfo.value.exit_code == 7
+
+
+def test_plan_sends_points_and_times_as_the_planner_expects():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["url"] = request.url
+        return httpx.Response(200, json={"plan": {"itineraries": []}})
+
+    when = {"date": "10-26-2026", "time": "6:00pm", "arriveBy": "true"}
+    with make_client(handler) as client:
+        client.plan((41.3874, 2.17), (41.4036, 2.1744), when)
+    params = seen["url"].params
+    assert seen["url"].path == "/v1/planner/plan"
+    assert (params["fromPlace"], params["toPlace"]) == ("41.387400,2.170000", "41.403600,2.174400")
+    assert (params["mode"], params["arriveBy"], params["time"]) == (
+        "TRANSIT,WALK",
+        "true",
+        "6:00pm",
+    )

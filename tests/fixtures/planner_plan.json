@@ -1,0 +1,232 @@
+{
+  "requestParameters": {
+    "date": "01-01-2026",
+    "time": "2:00am",
+    "arriveBy": "true",
+    "mode": "TRANSIT,WALK"
+  },
+  "plan": {
+    "date": 1767229200000,
+    "from": {
+      "name": "Origin",
+      "lat": 41.0,
+      "lon": 2.0,
+      "vertexType": "NORMAL"
+    },
+    "to": {
+      "name": "Destination",
+      "lat": 41.02,
+      "lon": 2.0,
+      "vertexType": "NORMAL"
+    },
+    "itineraries": [
+      {
+        "duration": 3000,
+        "startTime": 1767226200000,
+        "endTime": 1767229200000,
+        "walkTime": 3000,
+        "transitTime": 0,
+        "waitingTime": 0,
+        "walkDistance": 1.0,
+        "transfers": 0,
+        "legs": [
+          {
+            "startTime": 1767226200000,
+            "endTime": 1767229200000,
+            "mode": "WALK",
+            "realTime": false,
+            "distance": 100.0,
+            "duration": 3000.0,
+            "route": "",
+            "steps": [],
+            "legGeometry": {},
+            "from": {
+              "name": "Origin",
+              "lat": 41.0,
+              "lon": 2.0,
+              "vertexType": "NORMAL"
+            },
+            "to": {
+              "name": "Destination",
+              "lat": 41.02,
+              "lon": 2.0,
+              "vertexType": "NORMAL"
+            }
+          }
+        ]
+      },
+      {
+        "duration": 1140,
+        "startTime": 1767228000000,
+        "endTime": 1767229140000,
+        "walkTime": 540,
+        "transitTime": 0,
+        "waitingTime": 0,
+        "walkDistance": 1.0,
+        "transfers": 0,
+        "legs": [
+          {
+            "startTime": 1767228000000,
+            "endTime": 1767228300000,
+            "mode": "WALK",
+            "realTime": false,
+            "distance": 100.0,
+            "duration": 300.0,
+            "route": "",
+            "steps": [],
+            "legGeometry": {},
+            "from": {
+              "name": "Origin",
+              "lat": 41.0,
+              "lon": 2.0,
+              "vertexType": "NORMAL"
+            },
+            "to": {
+              "name": "Prova",
+              "stopCode": "901",
+              "stopId": "3:1.901",
+              "lat": 41.0008,
+              "lon": 1.9995,
+              "vertexType": "TRANSIT"
+            }
+          },
+          {
+            "startTime": 1767228300000,
+            "endTime": 1767228900000,
+            "mode": "SUBWAY",
+            "realTime": false,
+            "distance": 100.0,
+            "duration": 600.0,
+            "route": "",
+            "steps": [],
+            "legGeometry": {},
+            "from": {
+              "name": "Prova",
+              "stopCode": "901",
+              "stopId": "3:1.901",
+              "lat": 41.0008,
+              "lon": 1.9995,
+              "vertexType": "TRANSIT"
+            },
+            "to": {
+              "name": "Estació Inventada",
+              "stopCode": "902",
+              "stopId": "3:1.902",
+              "lat": 41.02,
+              "lon": 2.0,
+              "vertexType": "TRANSIT"
+            },
+            "routeShortName": "X9",
+            "routeLongName": "Prova - Estació Inventada",
+            "headsign": "Destí de prova",
+            "agencyName": "TMB",
+            "transitNamespace": "metro",
+            "routeId": "3:1.9.1",
+            "tripId": "3:1.9.1"
+          },
+          {
+            "startTime": 1767228900000,
+            "endTime": 1767229140000,
+            "mode": "WALK",
+            "realTime": false,
+            "distance": 100.0,
+            "duration": 240.0,
+            "route": "",
+            "steps": [],
+            "legGeometry": {},
+            "from": {
+              "name": "Estació Inventada",
+              "stopCode": "902",
+              "stopId": "3:1.902",
+              "lat": 41.02,
+              "lon": 2.0,
+              "vertexType": "TRANSIT"
+            },
+            "to": {
+              "name": "Destination",
+              "lat": 41.02,
+              "lon": 2.0,
+              "vertexType": "NORMAL"
+            }
+          }
+        ]
+      },
+      {
+        "duration": 1000,
+        "startTime": 1767228600000,
+        "endTime": 1767229600000,
+        "walkTime": 300,
+        "transitTime": 0,
+        "waitingTime": 0,
+        "walkDistance": 1.0,
+        "transfers": 1,
+        "legs": [
+          {
+            "startTime": 1767228600000,
+            "endTime": 1767228900000,
+            "mode": "WALK",
+            "realTime": false,
+            "distance": 100.0,
+            "duration": 300.0,
+            "route": "",
+            "steps": [],
+            "legGeometry": {},
+            "from": {
+              "name": "Origin",
+              "lat": 41.0,
+              "lon": 2.0,
+              "vertexType": "NORMAL"
+            },
+            "to": {
+              "name": "Prova",
+              "stopCode": "901",
+              "stopId": "3:1.901",
+              "lat": 41.0008,
+              "lon": 1.9995,
+              "vertexType": "TRANSIT"
+            }
+          },
+          {
+            "startTime": 1767228900000,
+            "endTime": 1767229600000,
+            "mode": "SUBWAY",
+            "realTime": false,
+            "distance": 100.0,
+            "duration": 700.0,
+            "route": "",
+            "steps": [],
+            "legGeometry": {},
+            "from": {
+              "name": "Prova",
+              "stopCode": "901",
+              "stopId": "3:1.901",
+              "lat": 41.0008,
+              "lon": 1.9995,
+              "vertexType": "TRANSIT"
+            },
+            "to": {
+              "name": "Estació Inventada",
+              "stopCode": "902",
+              "stopId": "3:1.902",
+              "lat": 41.02,
+              "lon": 2.0,
+              "vertexType": "TRANSIT"
+            },
+            "routeShortName": "X9",
+            "routeLongName": "Prova - Estació Inventada",
+            "headsign": "Destí de prova",
+            "agencyName": "TMB",
+            "transitNamespace": "metro",
+            "routeId": "3:1.9.1",
+            "tripId": "3:1.9.1"
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "searchWindowUsed": 3000
+  },
+  "previousPageCursor": "x",
+  "nextPageCursor": "y"
+}
