@@ -344,6 +344,32 @@ SKILL.md: if `tmb place list` is empty, the agent asks which places the user goe
 gym…) and where they are, geocodes them, runs `tmb place add` for each, reads back the chosen stops
 with their walk times and fixes them with `tmb place walk`. Humans can do the same by hand.
 
+## v0.4: routes and when to leave (27/10/2026)
+
+From TMB's trip planner (`planner/plan`, timetables, not real time: `docs/tmb-api.md`).
+
+| The user says | One call |
+|---|---|
+| "¿Cómo voy a Sagrada Família?" | `tmb route casa sagrada familia` |
+| "Tengo que estar en el trabajo a las 9, ¿a qué hora salgo?" | `tmb leave trabajo --by 9:00` |
+| "Si salgo ahora, ¿llego a las 18:00 a casa de Laura?" | `tmb leave 41.39,2.15 --by 18:00` (the agent geocodes) |
+| "Calcula la ruta y avísame cuando tenga que salir" | `tmb leave trabajo --by 9:00 --wait` (background) |
+
+- **`tmb route <from> <to> [--by HH:MM | --at HH:MM] [--day YYYY-MM-DD]`**: up to 3 options, each
+  `{leave_at, leave_in, arrive_at, minutes, walk_minutes, transfers, scheduled: true, legs: [{mode:
+  walk|metro|bus|…, line, direction, from, to, from_code, depart, arrive, minutes}]}`. With `--by`
+  (arrive by), options that arrive in time, latest departure first; otherwise (leave now or
+  `--at`), earliest arrival first. A walk-only option counts like any other.
+- **`tmb leave <to> [--from X] [--by HH:MM]`**: the best option only, with `leave_in` (minutes
+  from now). `--from` defaults to the place `casa` if it exists; also takes any target that has a
+  position (a place, `lat,lon`, a stop or station name).
+- **`--wait`** on `leave`: re-plans every 5 min and exits with `"event": "leave_now"` at the
+  departure time (or at once if it's already time), like `watch`.
+- From and to resolve like other targets but need a position: places, `lat,lon`, stop or station
+  names. Addresses: the agent geocodes them.
+- Times are Barcelona time. `--by`/`--at` without `--day` mean today, or tomorrow if that time
+  has passed. `say` says "según horarios" because the planner isn't real time.
+
 ## Attribution
 
 TMB's and AMB's terms require citing the source and the date of last update. Every data command

@@ -123,10 +123,44 @@ Filters (swagger, not tried yet): `…/{code}` for one element, `?filter=FIELD=v
   (1 stations, 2 stops, 3 accesses, 4 interchanges), `dist` in metres. Enables a future `near`.
 - **`static/datasets/gtfs.zip`**: the whole network as GTFS (also needs keys).
 
+## Trip planner: `planner/plan` ✅ (captured 27/10/2026)
+
+An OpenTripPlanner 2 response. Request (query, all required except the last two): `fromPlace` and
+`toPlace` as `lat,lon`, `date` `mm-dd-yyyy`, `time` like `6:00pm`, `arriveBy` `true` (date/time is
+the arrival) or `false` (the departure), `mode` `TRANSIT,WALK`; optional `maxWalkDistance`,
+`showIntermediateStops`.
+
+```text
+requestParameters            echo of the query (strings)
+plan
+  date                       epoch ms of the asked time
+  from, to                   {name: "Origin"/"Destination", lat, lon}
+  itineraries[]              3 in the capture: walk only, L2 direct, L3+L5 with a transfer
+    duration, walkTime, transitTime, waitingTime   seconds
+    startTime, endTime       epoch ms: when to leave the origin, when you arrive
+    walkDistance             metres
+    transfers                int
+    legs[]
+      mode                   WALK, SUBWAY (also BUS, … per OTP)
+      startTime, endTime     epoch ms
+      distance, duration     metres, seconds
+      realTime               false: the planner uses timetables, not real time
+      from, to               {name, lat, lon; transit legs: stopCode ("213", the per-line
+                              metro code we already use), stopId ("3:1.213"), departure/arrival}
+      routeShortName         "L2" (transit legs)
+      routeLongName          "Paral·lel - Badalona Pompeu Fabra"
+      headsign               "Badalona Pompeu Fabra" (direction)
+      agencyName             "TMB"; transitNamespace "metro"
+metadata, previousPageCursor, nextPageCursor, debugOutput, …   not used
+```
+
+Arriving by 18:00 from Pl Catalunya to Sagrada Família: leave 17:42:27, walk 7 min to Passeig de
+Gràcia, L2 5 min, walk 3 min, arrive 17:59:58. No `alerts` in this response. Not captured: an
+impossible trip (OTP usually answers an `error` object without itineraries).
+
 ## Other
 
-- **`planner/plan`**: trip planner; its responses carry an `alerts` field (`LocalizedAlert`). There
-  is **no** service-alerts endpoint.
+- No service-alerts endpoint; the swagger lists `alerts` on planner legs, but the capture had none.
 - **Legacy iBus** (documented at `/api-docs/v1/ibus_legacy`): deprecated by TMB ("will
   disappear"). Don't use it.
 - **Rate limits**: not documented anywhere public.
