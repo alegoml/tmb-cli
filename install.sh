@@ -6,7 +6,7 @@
 # Read it first: it only checks for uv and runs `uv tool install` on the tag below.
 set -eu
 
-VERSION="0.2.0"  # keep equal to pyproject.toml (tests/test_packaging.py checks it)
+VERSION="0.3.0"  # keep equal to pyproject.toml (tests/test_packaging.py checks it)
 REPO="https://github.com/alegoml/tmb-cli"
 
 if ! command -v uv >/dev/null 2>&1; then

@@ -17,7 +17,7 @@ pipelines (`jq`) and coding agents (Claude Code, Codex, Hermes…) can use it di
 ## Install
 
 ```bash
-uv tool install git+https://github.com/alegoml/tmb-cli@v0.2.0
+uv tool install git+https://github.com/alegoml/tmb-cli@v0.3.0
 ```
 
 Or with the script, which does the same after checking that uv is there (read it first):

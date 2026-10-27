@@ -163,6 +163,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
     - [x] v0.4: `planner/plan` captured (27/10/2026); `tmb route`, `tmb leave [--wait]` (spec v0.4)
     - [x] v0.5: `tmb setup` (guided onboarding with next_question), trips (`trip add|list|remove`,
       used by `leave`/`route`), `prefs` (margin, pace), ambiguity flags + alternatives
+    - [x] Released as v0.3.0 (27/10/2026)
     - [ ] Ramp status per bus; ntfy/webhook sinks for `watch` if agents need them
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
