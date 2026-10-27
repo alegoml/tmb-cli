@@ -1,8 +1,6 @@
 # tmb-cli
 
-[![Text your agent from your phone: it knows your stops and tells you when to leave](.github/assets/tmb-cli-demo.jpg)](.github/assets/tmb-cli-demo.mp4)
-
-<p align="center"><a href=".github/assets/tmb-cli-demo.mp4">▶ Watch the 25-second demo</a></p>
+https://github.com/user-attachments/assets/129f0309-7cdc-45ff-aa75-c105317af7e6
 
 Unofficial command-line client for Barcelona's real-time bus and metro arrivals: **TMB**
 (Transports Metropolitans de Barcelona: Barcelona's buses and metro) and **AMB**'s metropolitan
