@@ -17,7 +17,8 @@ answer things like "¿me da tiempo a pillar el V15?". Inspired by
   `models.py` `Wire*` (TMB responses) and output models · `arrivals.py` TMB → our output ·
   `network.py` static network cache + name search · `favourites.py` favourites file ·
   `amb.py` AMB's GTFS cache + GTFS-Realtime parsing · `answers.py` targets → answers (v0.3) ·
-  `places.py` places file · `nearby.py` distances and walk estimates · `say.py` `say` sentences.
+  `places.py` places file · `nearby.py` distances and walk estimates · `say.py` `say` sentences ·
+  `routes.py` trip planner → options · `profile.py` trips and preferences.
 - `tests/` offline tests only; synthetic responses in `tests/fixtures/`; `conftest.py` gives every
   test an isolated cache and a fake AMB (synthetic GTFS zip and GTFS-RT feed built in code).
 
@@ -160,8 +161,9 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
       words; `near`; `say` on every answer; `watch --minutes|--leave` (wait and exit); SKILL.md with
       first-time setup and phrase → command table
     - [x] v0.4: `planner/plan` captured (27/10/2026); `tmb route`, `tmb leave [--wait]` (spec v0.4)
-    - [ ] Habitual trips ("los martes a pádel a las 19h"), ramp status per bus, ntfy/webhook sinks
-      for `watch` if agents need them
+    - [x] v0.5: `tmb setup` (guided onboarding with next_question), trips (`trip add|list|remove`,
+      used by `leave`/`route`), `prefs` (margin, pace), ambiguity flags + alternatives
+    - [ ] Ramp status per bus; ntfy/webhook sinks for `watch` if agents need them
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
 Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API

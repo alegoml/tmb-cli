@@ -86,7 +86,14 @@ tmb watch casa --line 67 --minutes 5   # wait, then exit when the 67 is 5 min aw
 tmb watch casa --leave         # wait, then exit when it's time to set off
 tmb route casa "sagrada familia" --by 18:00   # up to 3 options from TMB's trip planner
 tmb leave trabajo --by 9:00    # when to leave (from casa); --wait exits at that time
+tmb setup                      # what's missing and the next question to ask (agents onboarding you)
+tmb trip add trabajo --from casa --to trabajo --by 9:00 --days lun-vie   # then: tmb leave trabajo
+tmb prefs --margin 2 --pace slow   # default spare minutes; walking pace for estimates
 ```
+
+`tmb` can't see your phone's location: your agent passes a location you share (a WhatsApp or
+iMessage pin) as `lat,lon`, or asks where you are. When a name matches two places ("Plaça
+Catalunya" is in Barcelona and in Gavà), the answer says so and lists the alternatives.
 
 ```json
 {
@@ -182,8 +189,9 @@ there.
    ```
    For other agents, point them at `tmb skills get` or paste it into their instructions
    (`AGENTS.md`).
-3. The first time, the agent asks which places you use and where they are, and saves them with
-   `tmb place add` (it picks the stops and walk times; you correct them). Then just text it:
+3. The first time, the agent runs `tmb setup` and asks what it needs, one thing at a time: your
+   home and other places (it picks the stops and walk times; you correct them), usual trips (and
+   whether you want a daily "sal ya" for them), your margin and walking pace. Then just text it:
    "¿me da tiempo a pillar el bus?", "¿cuándo pasa el 67?", "estoy en Plaça Catalunya, ¿qué pasa?",
    "avísame cuando tenga que salir".
 
