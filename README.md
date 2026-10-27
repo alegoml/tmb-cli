@@ -1,9 +1,14 @@
 # tmb-cli
 
+[![Text your agent from your phone: it knows your stops and tells you when to leave](.github/assets/tmb-cli-demo.jpg)](.github/assets/tmb-cli-demo.mp4)
+
+<p align="center"><a href=".github/assets/tmb-cli-demo.mp4">▶ Watch the 25-second demo</a></p>
+
 Unofficial command-line client for Barcelona's real-time bus and metro arrivals: **TMB**
 (Transports Metropolitans de Barcelona: Barcelona's buses and metro) and **AMB**'s metropolitan
 buses run by other operators (TUSGSAL, Moventis, Monbus, Aerobús…). Output is JSON, so shell
-pipelines (`jq`) and coding agents (Claude Code, Codex, Hermes…) can use it directly.
+pipelines (`jq`), coding agents (Claude Code, Codex…) and personal agents you text from your phone
+(Hermes, OpenClaw…) can use it directly.
 
 > Not affiliated with or endorsed by TMB or AMB. Data: TMB's open API and AMB's open data,
 > credited in every response (`source`, `updated_at`).
