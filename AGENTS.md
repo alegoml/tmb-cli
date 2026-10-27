@@ -146,7 +146,8 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
      shipped), `RELEASING.md` [vodafone]. Distribution: GitHub tags only, no PyPI (Alex, 25/10/2026)
    - [x] Go public: `alegoml/tmb-cli` on GitHub (25/10/2026), tested by Alex by hand, installed
      from GitHub, with Claude Code and with his phone agent; tag `v0.1.0` + GitHub release
-   - [ ] README demo (3-step key signup) + 15 s human-vs-agent video → post
+   - [x] README key guide (26/10/2026) and demo video (27/10/2026: 25 s, built in the sibling repo
+     `tmb-cli-video` with Remotion; `.github/assets/`)
    - [-] `--format pretty` for humans: not in v1 (D9)
 10. - [x] AMB docs: `docs/amb-api.md`, rule 4 widened, spec section "AMB" (D11–D13)
     - [x] AMB in code: GTFS-RT + static cache, `tmb bus` merges TMB and AMB with `operator`,
@@ -154,7 +155,7 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
     - [x] Shared stop checked with real keys (916, 26/10/2026): TMB lists AMB lines too, merged
       without duplicates
     - [x] Release v0.2.0 (26/10/2026)
-    - [ ] Announce: README demo, 15 s video, post
+    - [ ] Announce: the post
 
 11. - [x] v0.3 agent-native (spec "v0.3"): coordinates in both caches; `place add|walk|list|remove`
       (nearby stops + estimated walks); `next` takes a place, favourite, line, code, point or
