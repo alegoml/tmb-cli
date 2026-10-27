@@ -283,8 +283,8 @@ Alex, 26/10/2026: alerts by "wait and exit" first (D14), coordinates come from t
 | (location shared) "¿Qué me pilla cerca?" | `tmb near 41.3870,2.1700` |
 | "Avísame cuando al 67 le queden 5 min" | `tmb watch casa --line 67 --minutes 5` (blocks, exits on the event) |
 | "Avísame cuando tenga que salir para el 67" | `tmb watch casa --line 67 --leave` |
-| First use: "mi casa está en Carrer X, el trabajo en Y" | agent geocodes, then `tmb place add casa 41.45,2.24 --label "Carrer X"` |
-| "Tardo 4 min a esa parada, no 6" | `tmb place walk casa 102526 4` |
+| First use: "mi casa está en Carrer X, el trabajo en Y" | agent geocodes, then `tmb place add casa 41.39,2.17 --label "Carrer X"` |
+| "Tardo 4 min a esa parada, no 6" | `tmb place walk casa 1103 4` |
 | Later (v0.4): "¿a qué hora salgo para llegar a las 9 al trabajo?" | `tmb leave trabajo --by 9:00` (TMB `planner/plan`) |
 
 ### Targets: anything goes

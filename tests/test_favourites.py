@@ -88,7 +88,7 @@ def test_add_checks_codes_against_the_cache_when_there_is_one():
     ok("fav", "add", "casa", "9", "--walk", "4")  # TMB's list only: it may be an AMB stop
     amb.get_cache(FakeAmb)
     assert error("fav", "add", "casa", "9", "--walk", "4") == (4, "not_found")
-    ok("fav", "add", "bufala", "100001", "--walk", "4")  # an AMB-only stop
+    ok("fav", "add", "parada-amb", "100001", "--walk", "4")  # an AMB-only stop
     assert error("fav", "add", "feina", "999", "--walk", "4", "--metro") == (4, "not_found")
     ok("fav", "add", "feina", "901", "801", "--walk", "4", "--metro")
 
