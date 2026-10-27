@@ -256,6 +256,6 @@ def search(
     # An exact name and a name prefix weigh the same, so towns break the tie: "plaça catalunya"
     # is Barcelona's "Pl Catalunya - …" before an exact "Plaça Catalunya" in Gavà.
     found.sort(key=lambda item: (max(item[0], 1), *item[1:4]))
-    if ranked:  # (how well it matched, result), for telling apart equally good matches
-        return [(max(item[0], 1), item[-1]) for item in found[:limit]]
+    if ranked:  # (rank: 0 = exact name, 1 = prefix, …; result), to judge ambiguity
+        return [(item[0], item[-1]) for item in found[:limit]]
     return [result for *_, result in found[:limit]]

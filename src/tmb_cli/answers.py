@@ -219,7 +219,7 @@ def _search(words: str, session: Session) -> Target:
     if not network.normalize(words):
         raise UsageError("Say a place, a stop, a line or a lat,lon point.")
     ranked = (
-        network.search(tmb_net, words, amb=session.amb_net, limit=8, ranked=True)
+        network.search(tmb_net, words, amb=session.amb_net, limit=30, ranked=True)
         if tmb_net
         else _search_amb_only(words, session)
     )
@@ -230,17 +230,25 @@ def _search(words: str, session: Session) -> Target:
         )
     best_rank, best = ranked[0]
     point = _position(best, tmb_net, session.amb_net)
+    best_town = getattr(best, "town", None)
     alternatives: list[Alternative] = []
     for rank, other in ranked[1:]:
-        where = _position(other, tmb_net, session.amb_net)
-        far = point and where and nearby.distance_m(*point, *where) > AMBIGUOUS_M
-        seen = {(a.name, a.town) for a in alternatives}
+        if len(alternatives) == 3:
+            break
         town = getattr(other, "town", None)
-        if rank == best_rank and far and (other.name, town) not in seen and len(alternatives) < 3:
-            codes = list(other.codes.values()) if other.type == "metro" else [other.code]
-            alternatives.append(
-                Alternative(name=other.name, type=other.type, town=town, codes=codes)
-            )
+        # Another place, not a neighbour: an exact name elsewhere ("Plaça Catalunya" in Gavà),
+        # or as good a match in another town. Prefix twins in the same area aren't ambiguous.
+        exact = rank == 0
+        other_town = best_town is not None and town is not None and town != best_town
+        if not (exact or (other_town and rank <= best_rank)):
+            continue
+        where = _position(other, tmb_net, session.amb_net)
+        if not (point and where and nearby.distance_m(*point, *where) > AMBIGUOUS_M):
+            continue
+        if (other.name, town) in {(a.name, a.town) for a in alternatives}:
+            continue
+        codes = list(other.codes.values()) if other.type == "metro" else [other.code]
+        alternatives.append(Alternative(name=other.name, type=other.type, town=town, codes=codes))
     town = getattr(best, "town", None)
     if best.type == "metro":
         stop = StopRef(type="metro", name=best.name, codes=list(best.codes.values()))
@@ -253,7 +261,7 @@ def _search(words: str, session: Session) -> Target:
 
 def _search_amb_only(words: str, session: Session) -> list:
     empty = network.Network(downloaded_at=0, updated_at="", stops=[], stations=[])
-    return network.search(empty, words, amb=session.amb_net, metro=False, limit=8, ranked=True)
+    return network.search(empty, words, amb=session.amb_net, metro=False, limit=30, ranked=True)
 
 
 def _position(result, tmb_net: network.Network | None, amb_net: amb.AmbCache):
