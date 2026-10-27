@@ -370,6 +370,32 @@ From TMB's trip planner (`planner/plan`, timetables, not real time: `docs/tmb-ap
 - Times are Barcelona time. `--by`/`--at` without `--day` mean today, or tomorrow if that time
   has passed. `say` says "según horarios" because the planner isn't real time.
 
+## v0.5: setup, trips, preferences, ambiguity (27/10/2026)
+
+Asked by Alex: the first time, the agent asks everything it needs (and offers trips and alerts);
+it never guesses where the user is; when a name could be several places, it asks.
+
+- **Location.** `tmb` runs on the agent's machine and can't see the phone. The agent passes a
+  location the user shared (a WhatsApp or iMessage pin carries coordinates) as `lat,lon`, or asks
+  "¿dónde estás?" (a street, a stop, a landmark). Never guess.
+- **`tmb setup`** returns what is configured and what is missing, in order, each missing item with
+  the question to ask (`"next_question"`), so the agent can loop: ask, run the command, call
+  `setup` again until `"complete": true`. Items: TMB keys (optional: AMB works without), places
+  (at least `casa`), each place's walk times confirmed, trips (optional, offered once), preferences
+  (margin, walking pace).
+- **Trips** (`trips.json`): `tmb trip add <name> --from <place> --to <place> [--by HH:MM]
+  [--days lun-vie]`, `trip list|remove`. `tmb leave <trip>` and `tmb route <trip>` use its from, to
+  and `--by` (overridable). `--days` is information for the agent, which schedules its own daily
+  check (`tmb leave <trip> --wait` some time before) if the user wants an alert: `tmb` doesn't
+  schedule anything.
+- **Preferences** (`prefs.json`): `tmb prefs [--margin N] [--pace slow|normal|fast]`. `margin`
+  is the default `--margin` of `next`/`watch`; `pace` scales estimated walks (65, 80, 95 m/min;
+  only estimates: walks the user set stay as they are).
+- **Ambiguity.** When a name resolves through search, `resolved` adds `alternatives` (other good
+  matches in other places, with town) and `ambiguous: true` if one of them ranks like the best
+  and is more than 500 m away. `say` then starts with "¿Te refieres a X (Barcelona)?" and still
+  answers for the best guess; the agent should ask before acting on it (an alert, a route).
+
 ## Attribution
 
 TMB's and AMB's terms require citing the source and the date of last update. Every data command
