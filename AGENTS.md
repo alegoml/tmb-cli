@@ -47,7 +47,9 @@ uv run ruff check . && uv run ruff format .
    and AMB's published open data at `https://www.ambmobilitat.cat/` (the GTFS zip and the
    GTFS-Realtime feed listed in AMB's open data catalogue; see `docs/amb-api.md`). Don't use
    third-party backends (e.g. andana.bcn.am), AMB's app endpoints, or scrape tmb.cat/amb.cat.
-   (Widened to AMB by Alex, 25/10/2026.)
+   (Widened to AMB by Alex, 25/10/2026.) The one outbound exception: an alert's text, sent to a
+   notification target the **user** configured (`--notify` / `prefs --notify`: an ntfy topic or a
+   webhook), only when an alert fires; never credentials (Alex, 27/10/2026).
 5. **Don't invent API fields.** Shape output only from fields seen in real responses; when unsure,
    ask Alex to run the command and paste (sanitized) output.
 6. Small, reviewable changes. Explain briefly what you changed and why: Alex owns the design.

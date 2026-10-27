@@ -396,6 +396,26 @@ it never guesses where the user is; when a name could be several places, it asks
   and is more than 500 m away. `say` then starts with "¿Te refieres a X (Barcelona)?" and still
   answers for the best guess; the agent should ask before acting on it (an alert, a route).
 
+## v0.6: notifications (27/10/2026)
+
+For agents that can't run a background job and message the user later, `tmb` can deliver the
+alert itself.
+
+- `watch` and `leave --wait` take `--notify TARGET`; `tmb prefs --notify TARGET` sets a default
+  (`--notify none` turns it off for one call, `prefs --notify none` clears it).
+- Targets: `ntfy:<topic>` (push to the ntfy app, server ntfy.sh), `ntfy:https://host/<topic>`
+  (a self-hosted ntfy), `webhook:https://…` (POST of the event JSON).
+- ntfy messages use ntfy's JSON publishing (`POST https://host/` with `topic`, `title` "tmb",
+  `message` = the event's `say`, `priority` 4, `tags`). Only `due` and `leave_now` notify, not
+  `timeout`.
+- The event JSON gains `"notified": {"target": "ntfy:<topic>" | "webhook", "ok": bool, "error"?}`.
+  A failed notification doesn't fail the command (the alert still prints). Webhook URLs aren't
+  echoed (they often carry tokens).
+- `tmb notify-test [TARGET]` sends a test message to the target or the default.
+- Privacy: on ntfy.sh anyone who knows a topic can read it, and alerts reveal stops and times.
+  Topics shorter than 12 characters get a `warning`; SKILL.md tells agents to suggest a long
+  random topic.
+
 ## Attribution
 
 TMB's and AMB's terms require citing the source and the date of last update. Every data command
