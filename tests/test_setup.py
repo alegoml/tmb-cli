@@ -55,11 +55,11 @@ def test_setup_walks_the_agent_through_every_question(monkeypatch):
     first = ok("setup")
     assert first["complete"] is False
     assert first["next_question"].startswith("¿Dónde vives?")
-    assert missing() == ["home", "places", "trips", "prefs", "keys"]
+    assert missing() == ["home", "places", "trips", "prefs", "notify", "keys"]
 
     ok("place", "add", "casa", HOME)
     status = ok("setup")
-    assert missing() == ["places", "walks", "trips", "prefs", "keys"]
+    assert missing() == ["places", "walks", "trips", "prefs", "notify", "keys"]
     walks = next(i for i in status["items"] if i["item"] == "walks")
     assert walks["question"].startswith("He estimado lo que tardas andando a las paradas de «casa»")
 
@@ -79,6 +79,9 @@ def test_setup_walks_the_agent_through_every_question(monkeypatch):
         "l-v",
     )
     ok("prefs", "--margin", "2")
+    notify = next(i for i in ok("setup")["items"] if i["item"] == "notify")
+    assert "suscríbete al tema «tmb-" in notify["question"]
+    ok("prefs", "--notify", "ntfy:tmb-prova-x7k2m9q4")
     assert missing() == ["keys"]
     monkeypatch.setenv("TMB_APP_ID", "test-id")
     monkeypatch.setenv("TMB_APP_KEY", "test-secret-key")
@@ -136,7 +139,7 @@ def test_days_parse_the_way_people_say_them():
 
 def test_prefs_margin_is_the_default_margin():
     ok("fav", "add", "casa", "0001", "--walk", "4")
-    assert ok("prefs", "--margin", "2")["prefs"] == {"margin": 2, "pace": "normal"}
+    assert ok("prefs", "--margin", "2")["prefs"] == {"margin": 2, "pace": "normal", "notify": None}
     out = ok("next", "casa")
     # The 5-min bus leaves 1 min to spare: not enough with a 2-min margin.
     assert [(a["minutes"], a["make_it"]) for a in out["arrivals"]][2] == (5, False)

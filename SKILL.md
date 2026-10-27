@@ -28,7 +28,12 @@ call `setup` again. Ask one or two things per message, not a form. The order:
    `tmb --no-input setup --done trips`.
 5. **Preferences**: margin at the stop and walking pace: `tmb --no-input prefs --margin 2 --pace
    slow|normal|fast`. Keep as is: `tmb --no-input setup --done prefs`.
-6. **TMB keys** (optional; AMB's metropolitan buses work without): the user creates free keys at
+6. **Notifications** (only if you can't message the user on your own; otherwise
+   `setup --done notify`): `setup` suggests a long random ntfy topic. The user installs the ntfy
+   app and subscribes to it; then `tmb --no-input prefs --notify ntfy:<topic>` and
+   `tmb --no-input notify-test` ("¿te ha llegado?"). Every `watch`/`leave --wait` then pushes its
+   alert there too. Keep topics long and random: anyone who knows one can read it.
+7. **TMB keys** (optional; AMB's metropolitan buses work without): the user creates free keys at
    developer.tmb.cat and runs `tmb auth set` in their own terminal, or puts `TMB_APP_ID` and
    `TMB_APP_KEY` in your secrets. **Never ask for, read, print or pass the keys yourself.**
    Skipped: `tmb --no-input setup --done keys`.
@@ -78,6 +83,9 @@ one.** Then save it as a place so it isn't ambiguous again.
 Run them **in the background**, confirm at once ("Vale, te aviso cuando tengas que salir"), and
 send the event's `say` when it ends; on `timeout`, say you stopped watching. If you can't run
 background jobs, schedule yourself a check and call `next` or `leave` at that time.
+With a notification target (prefs, or `--notify ntfy:<topic>` / `webhook:<url>`), the alert is
+also pushed to the phone; the event's `notified` says whether it got through (`ok`), so don't
+send it twice, and tell the user if it failed.
 
 ## Reading answers
 
@@ -93,7 +101,7 @@ background jobs, schedule yourself a check and call `next` or `leave` at that ti
 | Exit | `code` | What to do |
 |---|---|---|
 | 2 | `usage` | Fix the command (the message says what's wrong). |
-| 3 | `missing_credentials`, `auth_failed` | TMB keys missing or wrong: see setup step 6. AMB-only stops still work. |
+| 3 | `missing_credentials`, `auth_failed` | TMB keys missing or wrong: see setup step 7. AMB-only stops still work. |
 | 4 | `not_found` | Unknown place, stop or name: ask the user, or `tmb --no-input stops <words>`. |
 | 5 | `rate_limited`, `api_error` | If `retryable`, wait a little and retry once. |
 | 6 | `network_error` | Retry once; then tell the user TMB or AMB can't be reached. |

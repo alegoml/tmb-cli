@@ -18,7 +18,8 @@ answer things like "¿me da tiempo a pillar el V15?". Inspired by
   `network.py` static network cache + name search · `favourites.py` favourites file ·
   `amb.py` AMB's GTFS cache + GTFS-Realtime parsing · `answers.py` targets → answers (v0.3) ·
   `places.py` places file · `nearby.py` distances and walk estimates · `say.py` `say` sentences ·
-  `routes.py` trip planner → options · `profile.py` trips and preferences.
+  `routes.py` trip planner → options · `profile.py` trips and preferences · `notify.py` alert
+  delivery (ntfy, webhook).
 - `tests/` offline tests only; synthetic responses in `tests/fixtures/`; `conftest.py` gives every
   test an isolated cache and a fake AMB (synthetic GTFS zip and GTFS-RT feed built in code).
 
@@ -166,7 +167,9 @@ Habits borrowed from `luisgonzaleznf/vodafone-cli` and `Microck/wallapop-cli` ar
     - [x] v0.5: `tmb setup` (guided onboarding with next_question), trips (`trip add|list|remove`,
       used by `leave`/`route`), `prefs` (margin, pace), ambiguity flags + alternatives
     - [x] Released as v0.3.0 (27/10/2026)
-    - [ ] Ramp status per bus; ntfy/webhook sinks for `watch` if agents need them
+    - [x] v0.6: `--notify` (ntfy, webhook) on `watch`/`leave --wait`, `prefs --notify`,
+      `notify-test`, optional setup step; rule 4 allows the alert text out
+    - [ ] Ramp status per bus
 
 Later (not v1), roughly by value: `watch` with notifications, modelled as Watch → Check → Event →
 Sink (ntfy/webhook/exec) [wallapop]; `plan A B` via `planner/plan`; service alerts (if the API

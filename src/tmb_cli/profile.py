@@ -67,6 +67,7 @@ class Trips(BaseModel):
 class Prefs(BaseModel):
     margin: int = Field(0, ge=0)  # default spare minutes at the stop
     pace: Literal["slow", "normal", "fast"] = "normal"
+    notify: str | None = None  # default alert target: ntfy:<topic> or webhook:<url> (spec v0.6)
     # Setup questions already asked (spec v0.5): optional items aren't asked twice.
     asked: list[str] = []
 

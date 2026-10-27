@@ -317,6 +317,7 @@ class WatchEvent(Output):
     checked: int  # how many times it looked
     source: str
     updated_at: str
+    notified: dict | None = None  # {"target", "ok", "error"?, "warning"?} with --notify
 
 
 # --- v0.4: routes ---------------------------------------------------------------------

@@ -1,6 +1,7 @@
 """Command-line entry point (`tmb`)."""
 
 import os
+import secrets
 import stat
 import sys
 import time
@@ -20,6 +21,7 @@ from tmb_cli import (
     favourites,
     nearby,
     network,
+    notify,
     places,
     profile,
     routes,
@@ -282,6 +284,34 @@ def near(
     _run(action)
 
 
+NotifyOption = Annotated[
+    str | None,
+    typer.Option(
+        "--notify",
+        help="Also send the alert: ntfy:<topic>, ntfy:https://host/<topic>, webhook:<url>, "
+        "or none (default: your prefs).",
+    ),
+]
+
+
+def _notify_target(option: str | None) -> str | None:
+    """The target for this alert: the option, else the user's default; checked up front."""
+    target = profile.load_prefs().notify if option is None else option
+    if target in (None, "", "none"):
+        return None
+    notify.parse(target)  # a bad target is a usage error now, not when the alert fires
+    return target
+
+
+def _deliver(target: str | None, event: dict) -> dict:
+    if target is None or event.get("event") == "timeout":
+        return event
+    result = notify.send(target, "tmb", event["say"], event)
+    if warning := notify.warning(target):
+        result["warning"] = warning
+    return {**event, "notified": result}
+
+
 _sleep = time.sleep  # swapped in tests
 _now = time.monotonic
 
@@ -311,6 +341,7 @@ def watch(
     timeout: Annotated[
         int, typer.Option("--timeout", min=1, max=240, help="Give up after this many minutes.")
     ] = 60,
+    to: NotifyOption = None,
     line: LineOption = None,
 ) -> None:
     """Wait, checking every --every seconds, and exit with one event as soon as the condition
@@ -320,6 +351,7 @@ def watch(
         if (minutes is None) == (not leave):
             raise UsageError("Pass either --minutes N or --leave.")
         text = " ".join(target)
+        alert_to = _notify_target(to)
         goal = answers.resolve(text, _session())
         goal.lines += line or []
         if leave and walk is None and all(s.walk_minutes is None for s in goal.stops):
@@ -340,7 +372,7 @@ def watch(
             if found:
                 event = _watch_event(found, minutes, leave, spare, checked)
                 if event:
-                    return event.model_dump()
+                    return _deliver(alert_to, event.model_dump())
             if _now() - started + every > timeout * 60:
                 return WatchEvent(
                     event="timeout",
@@ -456,6 +488,7 @@ def leave(
     wait: Annotated[
         bool, typer.Option("--wait", help="Wait and exit with an event when it's time to go.")
     ] = False,
+    to: NotifyOption = None,
 ) -> None:
     """When to leave to get somewhere (by --by, else leaving now): the best option, with
     `leave_in`. With --wait, re-plans every 5 min and exits at the departure time."""
@@ -471,6 +504,7 @@ def leave(
                 "Where from? Pass --from.",
                 hint="Or save your home: `tmb place add casa <lat,lon>`.",
             )
+        alert_to = _notify_target(to) if wait else None
         checked = 0
         while True:
             checked += 1
@@ -479,14 +513,17 @@ def leave(
             if not wait:
                 return found.model_copy(update={"options": [best]}).model_dump(by_alias=True)
             if best.leave_in <= 0:
-                return {
-                    "event": "leave_now",
-                    "option": best.model_dump(by_alias=True),
-                    "say": found.say,  # already "Sal ya (HH:MM): …" at departure time
-                    "checked": checked,
-                    "source": "TMB",
-                    "updated_at": found.updated_at,
-                }
+                return _deliver(
+                    alert_to,
+                    {
+                        "event": "leave_now",
+                        "option": best.model_dump(by_alias=True),
+                        "say": found.say,  # already "Sal ya (HH:MM): …" at departure time
+                        "checked": checked,
+                        "source": "TMB",
+                        "updated_at": found.updated_at,
+                    },
+                )
             _sleep(min(300, best.leave_in * 60))
 
     _run(action)
@@ -552,8 +589,15 @@ def prefs(
     pace: Annotated[
         str | None, typer.Option("--pace", help="Walking pace: slow, normal or fast.")
     ] = None,
+    notify_to: Annotated[
+        str | None,
+        typer.Option(
+            "--notify", help="Default alert target (ntfy:<topic>, webhook:<url>) or none."
+        ),
+    ] = None,
 ) -> None:
-    """Show or set your preferences: default margin and walking pace (scales estimated walks)."""
+    """Show or set your preferences: default margin, walking pace (scales estimated walks) and
+    where alerts are sent."""
 
     def action() -> object:
         current = profile.load_prefs()
@@ -564,16 +608,50 @@ def prefs(
             if pace not in profile.PACE_M_PER_MIN:
                 raise UsageError("--pace is slow, normal or fast.")
             changes["pace"] = pace
+        if notify_to is not None:
+            if notify_to not in ("", "none"):
+                notify.parse(notify_to)
+            changes["notify"] = None if notify_to in ("", "none") else notify_to
         if changes:
             asked = current.asked if "prefs" in current.asked else [*current.asked, "prefs"]
             current = current.model_copy(update={**changes, "asked": asked})
             profile.save_prefs(current)
-        return {"prefs": current.model_dump(exclude={"asked"})}
+        shown = current.model_dump(exclude={"asked"})
+        if current.notify:  # webhook URLs often carry a token: don't echo them
+            shown["notify"] = notify.label(current.notify)
+        result: dict = {"prefs": shown}
+        if current.notify and (warning := notify.warning(current.notify)):
+            result["warning"] = warning
+        return result
 
     _run(action)
 
 
-SETUP_ITEMS = ["home", "places", "walks", "trips", "prefs", "keys"]
+@app.command("notify-test")
+def notify_test(
+    target: Annotated[
+        str | None, typer.Argument(help="ntfy:<topic> or webhook:<url> (default: your prefs).")
+    ] = None,
+) -> None:
+    """Send a test alert, to check notifications reach the phone."""
+
+    def action() -> object:
+        destination = _notify_target(target)
+        if destination is None:
+            raise UsageError(
+                "No notification target.",
+                hint="Pass one, or set it: tmb prefs --notify ntfy:<topic>.",
+            )
+        event = {
+            "event": "test",
+            "say": "Las notificaciones de tmb funcionan: aquí te llegarán los avisos.",
+        }
+        return _deliver(destination, event)
+
+    _run(action)
+
+
+SETUP_ITEMS = ["home", "places", "walks", "trips", "prefs", "notify", "keys"]
 
 
 @app.command()
@@ -597,7 +675,9 @@ def setup(
 
 
 def _setup_status() -> dict:
-    asked = set(profile.load_prefs().asked)
+    current = profile.load_prefs()
+    asked = set(current.asked)
+    topic = "tmb-" + secrets.token_hex(6)  # a suggestion: long and random, so nobody guesses it
     saved = places.load().places
     names = [p.name for p in saved]
     unconfirmed = [p for p in saved if any(s.estimated for s in p.stops)]
@@ -647,6 +727,15 @@ def _setup_status() -> dict:
             "question": "¿Te gusta llegar a la parada con algo de margen, por ejemplo 2 minutos? "
             "¿Y andas rápido, normal o despacio?",
             "command": "tmb prefs --margin N --pace slow|normal|fast; keep: tmb setup --done prefs",
+        },
+        {
+            "item": "notify",
+            "done": bool(current.notify) or "notify" in asked,
+            "question": "¿Quieres que los avisos («sal ya», «le quedan 5 min») te lleguen como "
+            "notificación en el móvil? Instala la app ntfy (gratis) y suscríbete al tema "
+            f"«{topic}»; te los mando ahí.",
+            "command": f"tmb prefs --notify ntfy:{topic}, then tmb notify-test; you can message "
+            "the user yourself, or no: tmb setup --done notify",
         },
         {
             "item": "keys",
