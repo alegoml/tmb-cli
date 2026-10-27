@@ -81,7 +81,7 @@ Built for a personal agent you text ("¿me da tiempo a pillar el bus?", "avísam
 5 min al 67"): one message is one call, and every answer carries `say`, a ready-to-send sentence.
 
 ```bash
-tmb place add casa 41.4521,2.2410 --label "Carrer X 12"   # a place: picks its nearby stops and walk times
+tmb place add casa 41.3851,2.1734 --label "Carrer d'Exemple 1"   # a place: picks its nearby stops and walk times
 tmb next casa                  # what's coming and when to leave, across all of casa's stops
 tmb next 67                    # the 67 at your places' stops
 tmb near plaça catalunya       # stops around a place, a name or a lat,lon, with arrivals
